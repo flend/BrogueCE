@@ -3698,6 +3698,10 @@ void initializeLevel() {
         }
         populateItems(upLoc[0], upLoc[1]);
         populateMonsters();
+
+        if(n == 0) {
+            populateItemsDebug(upLoc[0], upLoc[1]);
+        }
     }
 
     // Restore items that fell from the previous depth.

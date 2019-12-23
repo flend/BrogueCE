@@ -2925,6 +2925,7 @@ extern "C" {
     void buildHitList(creature **hitList, const creature *attacker, creature *defender, const boolean sweep);
     void addScentToCell(short x, short y, short distance);
     void populateItems(short upstairsX, short upstairsY);
+    void populateItemsDebug(short upstairsX, short upstairsY);
     item *placeItem(item *theItem, short x, short y);
     void removeItemFrom(short x, short y);
     void pickUpItemAt(short x, short y);
