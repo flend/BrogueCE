@@ -427,6 +427,9 @@ static void _remap(const char *from, const char *to) {
     }
 }
 
+static void _notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2) {
+    //Unused
+}
 
 struct brogueConsole sdlConsole = {
     _gameLoop,
@@ -434,7 +437,8 @@ struct brogueConsole sdlConsole = {
     _nextKeyOrMouseEvent,
     _plotChar,
     _remap,
-    _modifierHeld
+    _modifierHeld,
+    _notifyEvent
 };
 
 #endif

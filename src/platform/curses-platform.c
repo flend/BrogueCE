@@ -128,8 +128,6 @@ static void curses_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInpu
 
     Term.refresh();
 
-    if (noMenu && rogue.nextGame == NG_NOTHING) rogue.nextGame = NG_NEW_GAME;
-
     for (;;) {
         theTime = getTime(); //TCOD_sys_elapsed_milli();
 
@@ -213,13 +211,18 @@ static boolean modifier_held(int modifier) {
     return 0;
 }
 
+static void curses_notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2) { 
+    //Unused
+}
+
 struct brogueConsole cursesConsole = {
     gameLoop,
     curses_pauseForMilliseconds,
     curses_nextKeyOrMouseEvent,
     curses_plotChar,
     curses_remap,
-    modifier_held
+    modifier_held,
+    curses_notifyEvent
 };
 #endif
 
