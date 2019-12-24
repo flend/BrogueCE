@@ -749,6 +749,9 @@ void mainBrogueJunction() {
                 startLevel(rogue.depthLevel, 1); // descending into level 1
 
                 mainInputLoop();
+                if(rogue.serverMode) {
+                    rogue.nextGame = NG_QUIT;
+                }
                 freeEverything();
                 break;
             case NG_OPEN_GAME:
@@ -772,6 +775,9 @@ void mainBrogueJunction() {
                 rogue.playbackMode = false;
                 rogue.playbackOOS = false;
 
+                if(rogue.serverMode) {
+                    rogue.nextGame = NG_QUIT;
+                }
                 break;
             case NG_VIEW_RECORDING:
                 rogue.nextGame = NG_NOTHING;
@@ -816,6 +822,9 @@ void mainBrogueJunction() {
                 rogue.playbackMode = false;
                 rogue.playbackOOS = false;
 
+                if(rogue.serverMode) {
+                    rogue.nextGame = NG_QUIT;
+                }
                 break;
             case NG_HIGH_SCORES:
                 rogue.nextGame = NG_NOTHING;

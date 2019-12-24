@@ -73,6 +73,8 @@ Other changes
 -------------
 
 -
+  Adding the `--server-mode` command line parameter used to run the game from an external launcher
+-
   Turning on autopilot now requires confirmation
 -
   The graphics backend has been rewritten be the same on all platforms. (The

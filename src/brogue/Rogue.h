@@ -2313,6 +2313,7 @@ typedef struct playerCharacter {
     enum NGCommands nextGame;
     char nextGamePath[BROGUE_FILENAME_MAX];
     unsigned long nextGameSeed;
+    boolean serverMode;
 } playerCharacter;
 
 // Stores the necessary info about a level so it can be regenerated:
@@ -3125,6 +3126,7 @@ extern "C" {
     boolean characterForbiddenInFilename(const char theChar);
     void saveGame();
     void saveRecording();
+    void saveRecordingNoPrompt();
     void parseFile();
     void RNGLog(char *message);
 

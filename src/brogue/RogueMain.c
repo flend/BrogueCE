@@ -209,7 +209,7 @@ void generateFontFiles() {
 void initializeRogue(unsigned long seed) {
     short i, j, k;
     item *theItem;
-    boolean playingback, playbackFF, playbackPaused;
+    boolean playingback, playbackFF, playbackPaused, serverMode;
     short oldRNG;
 
     // generate font bitmap
@@ -218,13 +218,15 @@ void initializeRogue(unsigned long seed) {
     generateFontFiles();
 #endif
 
-    playingback = rogue.playbackMode; // the only three animals that need to go on the ark
+    playingback = rogue.playbackMode; // the only four animals that need to go on the ark
     playbackPaused = rogue.playbackPaused;
     playbackFF = rogue.playbackFastForward;
+    serverMode = rogue.serverMode;
     memset((void *) &rogue, 0, sizeof( playerCharacter )); // the flood
     rogue.playbackMode = playingback;
     rogue.playbackPaused = playbackPaused;
     rogue.playbackFastForward = playbackFF;
+    rogue.serverMode = serverMode;
 
     rogue.gameHasEnded = false;
     rogue.highScoreSaved = false;
@@ -1172,11 +1174,16 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
     }
 
     if (!rogue.playbackMode) {
-        if (saveHighScore(theEntry)) {
+        if (saveHighScore(theEntry) && !rogue.serverMode) {
             printHighScores(true);
         }
         blackOutScreen();
-        saveRecording();
+        if(rogue.serverMode) {
+            saveRecordingNoPrompt();
+        }
+        else {
+            saveRecording();
+        }
     }
 
     rogue.gameHasEnded = true;
@@ -1286,10 +1293,16 @@ void victory(boolean superVictory) {
     displayMoreSign();
     rogue.playbackMode = isPlayback;
 
-    saveRecording();
+    if (rogue.serverMode) {
+        saveRecordingNoPrompt();
+    }
+    else {
+        saveRecording();
+    }
 
-    printHighScores(qualified);
-
+    if(!rogue.serverMode) {
+        printHighScores(qualified);
+    }
     rogue.gameHasEnded = true;
 }
 
