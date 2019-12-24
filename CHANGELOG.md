@@ -78,6 +78,8 @@ Other changes
   reduction in functionality and quality - it is no longer an App and the game
   window cannot be freely resized. This will be improved in future releases)
 -
+  Adding the `--server-mode` command line parameter used to run the game from an external launcher
+-
   Turning on autopilot now requires confirmation
 -
   The "blue" player-to-monster combat information is now displayed in ally
