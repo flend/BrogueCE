@@ -275,32 +275,35 @@ short actionMenu(short x, boolean playingBack) {
             buttons[buttonCount].flags &= ~B_ENABLED;
             buttonCount++;
 
-            if (KEYBOARD_LABELS) {
-                sprintf(buttons[buttonCount].text, "  %sS: %sSuspend game and quit  ",  yellowColorEscape, whiteColorEscape);
-            } else {
-                strcpy(buttons[buttonCount].text, "  Suspend game and quit  ");
+            if(!rogue.serverMode) {
+                if (KEYBOARD_LABELS) {
+                    sprintf(buttons[buttonCount].text, "  %sS: %sSuspend game and quit  ",  yellowColorEscape, whiteColorEscape);
+                } else {
+                    strcpy(buttons[buttonCount].text, "  Suspend game and quit  ");
+                }
+                buttons[buttonCount].hotkey[0] = SAVE_GAME_KEY;
+                buttonCount++;
+                if (KEYBOARD_LABELS) {
+                    sprintf(buttons[buttonCount].text, "  %sO: %sOpen suspended game  ",        yellowColorEscape, whiteColorEscape);
+                } else {
+                    strcpy(buttons[buttonCount].text, "  Open suspended game  ");
+                }
+                buttons[buttonCount].hotkey[0] = LOAD_SAVED_GAME_KEY;
+                buttonCount++;            
+                if (KEYBOARD_LABELS) {
+                    sprintf(buttons[buttonCount].text, "  %sV: %sView saved recording  ",       yellowColorEscape, whiteColorEscape);
+                } else {
+                    strcpy(buttons[buttonCount].text, "  View saved recording  ");
+                }
+                buttons[buttonCount].hotkey[0] = VIEW_RECORDING_KEY;
+                buttonCount++;
+                        
+                sprintf(buttons[buttonCount].text, "    %s---", darkGrayColorEscape);
+                buttons[buttonCount].flags &= ~B_ENABLED;
+                buttonCount++;
             }
-            buttons[buttonCount].hotkey[0] = SAVE_GAME_KEY;
-            buttonCount++;
-            if (KEYBOARD_LABELS) {
-                sprintf(buttons[buttonCount].text, "  %sO: %sOpen suspended game  ",        yellowColorEscape, whiteColorEscape);
-            } else {
-                strcpy(buttons[buttonCount].text, "  Open suspended game  ");
-            }
-            buttons[buttonCount].hotkey[0] = LOAD_SAVED_GAME_KEY;
-
         }
-        if (KEYBOARD_LABELS) {
-            sprintf(buttons[buttonCount].text, "  %sV: %sView saved recording  ",       yellowColorEscape, whiteColorEscape);
-        } else {
-            strcpy(buttons[buttonCount].text, "  View saved recording  ");
-        }
-        buttons[buttonCount].hotkey[0] = VIEW_RECORDING_KEY;
-        buttonCount++;
-        sprintf(buttons[buttonCount].text, "    %s---", darkGrayColorEscape);
-        buttons[buttonCount].flags &= ~B_ENABLED;
-        buttonCount++;
-
+        
         if (KEYBOARD_LABELS) {
             sprintf(buttons[buttonCount].text, "  %s\\: %s[%s] Hide color effects  ",   yellowColorEscape, whiteColorEscape, rogue.trueColorMode ? "X" : " ");
         } else {
@@ -2503,7 +2506,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             printDiscoveriesScreen();
             break;
         case VIEW_RECORDING_KEY:
-            if (rogue.playbackMode) {
+            if (rogue.playbackMode || rogue.serverMode) {
                 return;
             }
             confirmMessages();
@@ -2519,7 +2522,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             }
             break;
         case LOAD_SAVED_GAME_KEY:
-            if (rogue.playbackMode) {
+            if (rogue.playbackMode || rogue.serverMode) {
                 return;
             }
             confirmMessages();
@@ -2535,7 +2538,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             }
             break;
         case SAVE_GAME_KEY:
-            if (rogue.playbackMode) {
+            if (rogue.playbackMode || rogue.serverMode) {
                 return;
             }
             if (confirm("Suspend this game? (This feature is still in beta.)", false)) {
