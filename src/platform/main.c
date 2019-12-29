@@ -71,9 +71,11 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef BROGUE_SDL
-        currentConsole = sdlConsole;
+    currentConsole = sdlConsole;
+#elif BROGUE_WEB
+    currentConsole = webConsole;
 #else
-        currentConsole = cursesConsole;
+    currentConsole = cursesConsole;
 #endif
 
     rogue.nextGame = NG_NOTHING;
