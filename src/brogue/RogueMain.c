@@ -1051,6 +1051,7 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
     boolean playback;
     rogueEvent theEvent;
     item *theItem;
+    char recordingFilename[BROGUE_FILENAME_MAX] = {0};
 
     if (player.bookkeepingFlags & MB_IS_DYING) {
         // we've already been through this once; let's avoid overkill.
@@ -1173,17 +1174,28 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         displayMoreSign();
     }
 
-    if (!rogue.playbackMode) {
-        if (saveHighScore(theEntry) && !rogue.serverMode) {
+    if (rogue.serverMode) {
+        blackOutScreen();
+        saveRecordingNoPrompt(recordingFilename);
+    }
+    else {
+        if (saveHighScore(theEntry)) {
             printHighScores(true);
         }
         blackOutScreen();
-        if(rogue.serverMode) {
-            saveRecordingNoPrompt();
+        saveRecording(recordingFilename);
+    }
+
+    if(!rogue.playbackMode) {
+        if(!rogue.quit) {
+            notifyEvent(GAMEOVER_DEATH, theEntry.score, 0, theEntry.description, recordingFilename);
         }
         else {
-            saveRecording();
+            notifyEvent(GAMEOVER_QUIT, theEntry.score, 0, theEntry.description, recordingFilename);
         }
+    }
+    else {
+        notifyEvent(GAMEOVER_RECORDING, 0, 0, "recording ended", "none");
     }
 
     rogue.gameHasEnded = true;
@@ -1197,6 +1209,7 @@ void victory(boolean superVictory) {
     rogueHighScoresEntry theEntry;
     boolean qualified, isPlayback;
     cellDisplayBuffer dbuf[COLS][ROWS];
+    char recordingFilename[BROGUE_FILENAME_MAX] = {0};
 
     flushBufferToFile();
 
@@ -1294,15 +1307,25 @@ void victory(boolean superVictory) {
     rogue.playbackMode = isPlayback;
 
     if (rogue.serverMode) {
-        saveRecordingNoPrompt();
+        saveRecordingNoPrompt(recordingFilename);
     }
     else {
-        saveRecording();
-    }
-
-    if(!rogue.serverMode) {
+        saveRecording(recordingFilename);
         printHighScores(qualified);
     }
+
+    if (!rogue.playbackMode) {
+        if (superVictory) {
+            notifyEvent(GAMEOVER_SUPERVICTORY, theEntry.score, 0, theEntry.description, recordingFilename);
+        }
+        else {
+            notifyEvent(GAMEOVER_VICTORY, theEntry.score, 0, theEntry.description, recordingFilename);
+        }
+    }
+    else {
+        notifyEvent(GAMEOVER_RECORDING, 0, 0, "recording ended", "none");
+    }
+
     rogue.gameHasEnded = true;
 }
 
