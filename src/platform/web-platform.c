@@ -1,5 +1,8 @@
 #ifdef BROGUE_WEB
 
+#define __USE_POSIX199309
+#define _POSIX_C_SOURCE 199309L
+
 #include <stdio.h>
 #include <string.h>
 #include <poll.h>
@@ -7,7 +10,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
-#include <sys/time.h>
+#include <time.h>
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -251,10 +254,6 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
 {
     // because we will halt execution until we get more input, we definitely cannot have any dancing colors from the server side.
     colorsDance = false;
-
-    // We must avoid the main menu, so we spawn this process with noMenu, and quit instead of going to the menu
-    if (noMenu && rogue.nextGame == NG_NOTHING)
-        rogue.nextGame = NG_QUIT;
 
     // Send a status update of game variables we want on the client
     if (!refresh_screen_only)
