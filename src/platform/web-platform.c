@@ -7,8 +7,10 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <errno.h>
+#include <sys/time.h>
 #include <sys/un.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include "platform.h"
 
 #define SERVER_SOCKET "server-socket"
@@ -226,7 +228,11 @@ static void sendStatusUpdate()
 // This function is used both for checking input and pausing
 static boolean web_pauseForMilliseconds(short milliseconds)
 {
-    usleep(milliseconds * 1000);
+    struct timespec delay;
+    delay.tv_sec = 0;
+    delay.tv_nsec = milliseconds * 1000000L;
+
+    nanosleep(&delay, NULL);
 
     //Poll for input data
 
