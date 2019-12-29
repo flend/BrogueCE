@@ -1,6 +1,5 @@
 #ifdef BROGUE_WEB
 
-#define __USE_POSIX199309
 #define _POSIX_C_SOURCE 199309L
 
 #include <stdio.h>
@@ -53,8 +52,8 @@ static void open_logfile();
 static void close_logfile();
 static void write_to_log(const char *msg);
 static void setup_sockets();
-static int read_from_socket(char *buf, int size);
-static void write_to_socket(char *buf, int size);
+static int read_from_socket(unsigned char *buf, int size);
+static void write_to_socket(unsigned char *buf, int size);
 static void flush_output_buffer();
 
 static void gameLoop()
@@ -118,7 +117,7 @@ static void setup_sockets()
 }
 
 //Returns -1 if no data available (if in non-blocking mode)
-int read_from_socket(char *buf, int size)
+int read_from_socket(unsigned char *buf, int size)
 {
 
     int bytes_received = recvfrom(rfd, buf, size, 0, NULL, NULL);
@@ -145,9 +144,8 @@ static void flush_output_buffer()
     output_buffer_pos = 0;
 }
 
-static void write_to_socket(char *buf, int size)
+static void write_to_socket(unsigned char *buf, int size)
 {
-
     if (output_buffer_pos + size > OUTPUT_BUFFER_SIZE)
     {
         flush_output_buffer();
@@ -170,10 +168,10 @@ static void web_plotChar(uchar inputChar,
 {
 
     // just pack up the output and ship it off to the webserver
-    char outputBuffer[OUTPUT_SIZE];
+    unsigned char outputBuffer[OUTPUT_SIZE];
 
-    char firstCharByte = inputChar >> 8 & 0xff;
-    char secondCharByte = inputChar;
+    unsigned char firstCharByte = inputChar >> 8 & 0xff;
+    unsigned char secondCharByte = inputChar;
 
     outputBuffer[0] = (char)xLoc;
     outputBuffer[1] = (char)yLoc;
@@ -191,8 +189,7 @@ static void web_plotChar(uchar inputChar,
 
 static void sendStatusUpdate()
 {
-
-    char statusOutputBuffer[OUTPUT_SIZE];
+    unsigned char statusOutputBuffer[OUTPUT_SIZE];
 
     unsigned long statusValues[STATUS_TYPES_NUMBER];
     statusValues[DEEPEST_LEVEL_STATUS] = rogue.deepestLevel;
@@ -265,7 +262,7 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     // Flush output buffer
     flush_output_buffer();
 
-    char inputBuffer[MAX_INPUT_SIZE];
+    unsigned char inputBuffer[MAX_INPUT_SIZE];
 
     read_from_socket(inputBuffer, MAX_INPUT_SIZE);
     returnEvent->eventType = inputBuffer[0];
@@ -315,8 +312,7 @@ static boolean modifier_held(int modifier)
 
 static void notify_event(short eventId, int data1, int data2, const char *str1, const char *str2)
 {
-
-    char statusOutputBuffer[EVENT_SIZE];
+    unsigned char statusOutputBuffer[EVENT_SIZE];
     char msg[100];
 
     snprintf(msg, 100, "event: %i d1: %i d2: %i s1: %s s2: %s\n", eventId, data1, data2, str1, str2);
@@ -383,7 +379,6 @@ struct brogueConsole webConsole = {
     web_plotChar,
     web_remap,
     modifier_held,
-    notify_event,
     notify_event
 };
 
