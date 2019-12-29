@@ -30,7 +30,9 @@ static void printCommandlineHelp() {
     "-s seed                    start a new game with the specified numerical seed\n"
     "-o filename[.broguesave]   open a save file (extension optional)\n"
     "-v recording[.broguerec]   view a recording (extension optional)\n"
-    "--server-mode              never display the menu (automatically pick new game)\n"
+#ifdef BROGUE_WEB
+    "--server-mode              run the game in web-brogue server mode\n"
+#endif
 #ifdef BROGUE_SDL
     "--size N                   starts the game at font size N (1 to 13)\n"
 #endif
@@ -112,12 +114,6 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        if(strcmp(argv[i], "--server-mode") == 0) {
-            rogue.nextGame = NG_NEW_GAME;
-            rogue.serverMode = true;
-            continue;
-        }
-
         if(strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--open") == 0) {
             if (i + 1 < argc) {
                 strncpy(rogue.nextGamePath, argv[i + 1], BROGUE_FILENAME_MAX);
@@ -178,6 +174,15 @@ int main(int argc, char *argv[])
 #ifdef BROGUE_CURSES
         if (strcmp(argv[i], "--term") == 0 || strcmp(argv[i], "-t") == 0) {
             currentConsole = cursesConsole;
+            continue;
+        }
+#endif
+
+#ifdef BROGUE_WEB
+        if(strcmp(argv[i], "--server-mode") == 0) {
+            currentConsole = webConsole;
+            rogue.nextGame = NG_NEW_GAME;
+            rogue.serverMode = true;
             continue;
         }
 #endif
