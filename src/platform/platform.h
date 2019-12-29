@@ -36,6 +36,11 @@ struct brogueConsole {
     Returns whether a keyboard modifier is active -- 0 for Shift, 1 for Ctrl.
     */
     boolean (*modifierHeld)(int modifier);
+
+    /*
+    Notifies the platform code of an event during the game - e.g. victory
+    */
+    void (*notifyEvent)(short eventId, int data1, int data2, const char *str1, const char *str2);
 };
 
 void loadKeymap();
