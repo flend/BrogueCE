@@ -76,9 +76,12 @@ Other changes
   Adding the `--server-mode` command line parameter used to run the game from an external launcher
 -
   Turning on autopilot now requires confirmation
+  The Mac version has been remade to be the same as the Windows and Linux
+  versions. (Unfortunately, as the Mac release was special, this means a
+  reduction in functionality and quality - it is no longer an App and the game
+  window cannot be freely resized. This will be improved in future releases)
 -
-  The graphics backend has been rewritten be the same on all platforms. (The
-  game window may behave slightly differently)
+  Turning on autopilot now requires confirmation
 -
   The "blue" player-to-monster combat information is now displayed in ally
   tooltips (so you can more easily assess how much health they have)
@@ -110,13 +113,13 @@ Gameplay changes
   on the attacked cells would be hit, including allies. Now the monsters hit are
   only those that would trigger a spear attack if they were there alone. (This
   excludes hidden monsters)
--
-  Tweaked some charm stats to match 1.7.4 behaviour
 
 
 Bug fixes
 ---------
 
+-
+  Fixed charm durations which were affected by bugs
 -
   Monsters now have a 3% chance per turn to forget you, instead of 97%
 -

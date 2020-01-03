@@ -1,7 +1,5 @@
 include config.mk
 
-TCOD_DIR := libtcod
-
 cflags := -Isrc/brogue -Isrc/platform -std=c99 \
 	-Wall -Wpedantic -Werror=implicit -Wno-parentheses -Wno-format-overflow
 libs := -lm
@@ -36,8 +34,14 @@ endif
 %.o: %.c src/brogue/Rogue.h src/brogue/IncludeGlobals.h
 	$(CC) $(cppflags) $(CPPFLAGS) $(cflags) $(CFLAGS) -c $< -o $@
 
-bin/brogue bin/brogue.exe: $(objects)
-	$(CC) $(cflags) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(libs) $(LDLIBS)
+bin/brogue: $(objects)
+	$(CC) $(cflags) $(CFLAGS) -Wl,-rpath,lib $(LDFLAGS) -o $@ $^ $(libs) $(LDLIBS)
+
+icon.o: icon.rc
+	windres $< $@
+
+bin/brogue.exe: $(objects) icon.o
+	$(CC) $(cflags) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(libs) $(LDLIBS)
 
 clean:
 	$(RM) $(objects) bin/brogue{,.exe}
