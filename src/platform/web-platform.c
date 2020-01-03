@@ -166,12 +166,29 @@ static void web_plotChar(uchar inputChar,
                          short foreRed, short foreGreen, short foreBlue,
                          short backRed, short backGreen, short backBlue)
 {
-
-    // just pack up the output and ship it off to the webserver
     unsigned char outputBuffer[OUTPUT_SIZE];
 
-    unsigned char firstCharByte = inputChar >> 8 & 0xff;
-    unsigned char secondCharByte = inputChar;
+    unsigned char firstCharByte, secondCharByte;
+    uchar translatedChar = inputChar;
+
+    //Map characters which are missing or rendered as emoji on some platforms
+    switch(inputChar) {
+        case FOLIAGE_CHAR:
+            translatedChar = 0x03C8;
+            break;
+        case RING_CHAR:
+            translatedChar = 'o';
+            break;
+        case BAD_MAGIC_CHAR:
+            translatedChar = 0x25C6;
+            break;
+        case GOOD_MAGIC_CHAR:
+            translatedChar = 0x25C7;
+            break;
+    }
+
+    firstCharByte = translatedChar >> 8 & 0xff;
+    secondCharByte = translatedChar;
 
     outputBuffer[0] = (char)xLoc;
     outputBuffer[1] = (char)yLoc;
