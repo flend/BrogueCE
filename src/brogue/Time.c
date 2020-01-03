@@ -1788,7 +1788,8 @@ void rechargeItemsIncrementally(short multiplier) {
     short rechargeIncrement, staffRechargeDuration;
 
     if (rogue.wisdomBonus) {
-        rechargeIncrement = ringWisdomMultiplier(rogue.wisdomBonus * FP_FACTOR); // at level 27, you recharge anything to full in one turn
+        // at level 27, you recharge anything to full in one turn
+        rechargeIncrement = 10 * ringWisdomMultiplier(rogue.wisdomBonus * FP_FACTOR) / FP_FACTOR;
     } else {
         rechargeIncrement = 10;
     }
@@ -2203,6 +2204,7 @@ void playerTurnEnded() {
 
     handleXPXP();
     resetDFMessageEligibility();
+    recordCurrentCreatureHealths();
 
     if (player.bookkeepingFlags & MB_IS_FALLING) {
         playerFalls();
@@ -2572,7 +2574,6 @@ void playerTurnEnded() {
     rogue.playbackBetweenTurns = true;
     RNGCheck();
     handleHealthAlerts();
-    recordCurrentCreatureHealths();
 
     if (rogue.flareCount > 0) {
         animateFlares(rogue.flares, rogue.flareCount);

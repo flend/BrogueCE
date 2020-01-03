@@ -10,13 +10,22 @@
 #include "platform.h"
 
 #define PAUSE_BETWEEN_EVENT_POLLING     36L//17
+#define MAX_REMAPS  128
+
+struct keypair {
+    char from;
+    char to;
+};
 
 extern playerCharacter rogue;
+extern int brogueFontSize;
 
 static SDL_Window *Win = NULL;
 static SDL_Surface *WinSurf = NULL;
 static SDL_Surface *Font = NULL;
-static int FontSize = 8;
+
+static struct keypair remapping[MAX_REMAPS];
+static size_t nremaps = 0;
 
 static rogueEvent lastEvent;
 
@@ -44,8 +53,8 @@ static void refreshWindow() {
 Creates or resizes the game window with the specified font size.
 */
 static void ensureWindow(int fontsize) {
-    char fontname[] = "fonts/font-000.png";
-    sprintf(fontname, "fonts/font-%i.png", fontsize);
+    char fontname[] = "assets/font-000.png";
+    sprintf(fontname, "assets/font-%i.png", fontsize);
 
     static int lastsize = 0;
     if (lastsize != fontsize) {
@@ -60,9 +69,14 @@ static void ensureWindow(int fontsize) {
     if (Win != NULL) {
         SDL_SetWindowSize(Win, cellw*COLS, cellh*ROWS);
     } else {
-        Win = SDL_CreateWindow("Brogue " BROGUE_VERSION_STRING,
+        Win = SDL_CreateWindow("Brogue",
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, cellw*COLS, cellh*ROWS, 0);
         if (Win == NULL) sdlfatal();
+
+        SDL_Surface *icon = IMG_Load("assets/icon.png");
+        if (icon == NULL) imgfatal();
+        SDL_SetWindowIcon(Win, icon);
+        SDL_FreeSurface(icon);
     }
 
     refreshWindow();
@@ -106,10 +120,10 @@ static boolean eventFromKey(rogueEvent *event, SDL_Keycode key) {
     }
 
     /*
-    Only process keypad events when we're holding shift, as there is no
+    Only process keypad events when we're holding a modifier, as there is no
     TextInputEvent then.
     */
-    if (event->shiftKey) {
+    if (event->shiftKey || event->controlKey) {
         switch (key) {
             case SDLK_KP_0:
                 event->param1 = NUMPAD_0;
@@ -161,6 +175,14 @@ static boolean _modifierHeld(int mod) {
 }
 
 
+static char applyRemaps(char c) {
+    for (size_t i=0; i < nremaps; i++) {
+        if (remapping[i].from == c) return remapping[i].to;
+    }
+    return c;
+}
+
+
 /*
 If an event is available, returns true and updates returnEvent. Otherwise
 it returns false and an error event. This function also processes
@@ -188,15 +210,15 @@ static boolean pollBrogueEvent(rogueEvent *returnEvent, boolean textInput) {
         } else if (event.type == SDL_KEYDOWN) {
             SDL_Keycode key = event.key.keysym.sym;
 
-            if (key == SDLK_PAGEUP && FontSize < 13) {
-                ensureWindow(++FontSize);
-            } else if (key == SDLK_PAGEDOWN && FontSize > 1) {
-                ensureWindow(--FontSize);
+            if (key == SDLK_PAGEUP && brogueFontSize < 13) {
+                ensureWindow(++brogueFontSize);
+            } else if (key == SDLK_PAGEDOWN && brogueFontSize > 1) {
+                ensureWindow(--brogueFontSize);
             } else if (key == SDLK_F11) {
                 // Toggle fullscreen
                 SDL_SetWindowFullscreen(Win,
                     (SDL_GetWindowFlags(Win) & SDL_WINDOW_FULLSCREEN) ? 0 : SDL_WINDOW_FULLSCREEN);
-                ensureWindow(FontSize);
+                refreshWindow();
             }
 
             if (eventFromKey(returnEvent, key)) {
@@ -212,17 +234,18 @@ static boolean pollBrogueEvent(rogueEvent *returnEvent, boolean textInput) {
             different SDL events.
             */
             char c = event.text.text[0];
-            returnEvent->eventType = KEYSTROKE;
-            returnEvent->param1 = c;
 
             if (!textInput) {
-                if ((c == '=' || c == '+') && FontSize < 13) {
-                    ensureWindow(++FontSize);
-                } else if (c == '-' && FontSize > 1) {
-                    ensureWindow(--FontSize);
+                c = applyRemaps(c);
+                if ((c == '=' || c == '+') && brogueFontSize < 13) {
+                    ensureWindow(++brogueFontSize);
+                } else if (c == '-' && brogueFontSize > 1) {
+                    ensureWindow(--brogueFontSize);
                 }
             }
 
+            returnEvent->eventType = KEYSTROKE;
+            returnEvent->param1 = c;
             // ~ printf("textinput %s\n", event.text.text);
             return true;
         } else if (event.type == SDL_MOUSEBUTTONDOWN) {
@@ -269,18 +292,20 @@ static void _gameLoop() {
     int fontWidths[13] = {112, 128, 144, 160, 176, 192, 208, 224, 240, 256, 272, 288, 304};
     int fontHeights[13] = {176, 208, 240, 272, 304, 336, 368, 400, 432, 464, 496, 528, 528};
 
-    int size;
-    for (
-        size = 12;
-        size >= 0
-            && (fontWidths[size] / 16 * COLS > mode.w - 20
-                || fontHeights[size] / 16 * ROWS > mode.h - 50);
-        size--
-    );
-    // If no sizes are small enough, choose smallest
-    FontSize = size >= 0 ? size + 1 : 1;
+    if (brogueFontSize == 0) {
+        int size;
+        for (
+            size = 12;
+            size >= 0
+                && (fontWidths[size] / 16 * COLS > mode.w - 20
+                    || fontHeights[size] / 16 * ROWS > mode.h - 50);
+            size--
+        );
+        // If no sizes are small enough, choose smallest
+        brogueFontSize = size >= 0 ? size + 1 : 1;
+    }
 
-    ensureWindow(FontSize);
+    ensureWindow(brogueFontSize);
 
     rogueMain();
 
@@ -390,8 +415,17 @@ static void _plotChar(
 }
 
 
-static void _remap(const char *a, const char *b) {}
+static void _remap(const char *from, const char *to) {
+    if (nremaps < MAX_REMAPS) {
+        remapping[nremaps].from = from[0];
+        remapping[nremaps].to = to[0];
+        nremaps++;
+    }
+}
 
+static void _notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2) {
+    //Unused
+}
 
 struct brogueConsole sdlConsole = {
     _gameLoop,
@@ -399,7 +433,8 @@ struct brogueConsole sdlConsole = {
     _nextKeyOrMouseEvent,
     _plotChar,
     _remap,
-    _modifierHeld
+    _modifierHeld,
+    _notifyEvent
 };
 
 #endif

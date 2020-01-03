@@ -275,32 +275,35 @@ short actionMenu(short x, boolean playingBack) {
             buttons[buttonCount].flags &= ~B_ENABLED;
             buttonCount++;
 
-            if (KEYBOARD_LABELS) {
-                sprintf(buttons[buttonCount].text, "  %sS: %sSuspend game and quit  ",  yellowColorEscape, whiteColorEscape);
-            } else {
-                strcpy(buttons[buttonCount].text, "  Suspend game and quit  ");
+            if(!rogue.serverMode) {
+                if (KEYBOARD_LABELS) {
+                    sprintf(buttons[buttonCount].text, "  %sS: %sSuspend game and quit  ",  yellowColorEscape, whiteColorEscape);
+                } else {
+                    strcpy(buttons[buttonCount].text, "  Suspend game and quit  ");
+                }
+                buttons[buttonCount].hotkey[0] = SAVE_GAME_KEY;
+                buttonCount++;
+                if (KEYBOARD_LABELS) {
+                    sprintf(buttons[buttonCount].text, "  %sO: %sOpen suspended game  ",        yellowColorEscape, whiteColorEscape);
+                } else {
+                    strcpy(buttons[buttonCount].text, "  Open suspended game  ");
+                }
+                buttons[buttonCount].hotkey[0] = LOAD_SAVED_GAME_KEY;
+                buttonCount++;            
+                if (KEYBOARD_LABELS) {
+                    sprintf(buttons[buttonCount].text, "  %sV: %sView saved recording  ",       yellowColorEscape, whiteColorEscape);
+                } else {
+                    strcpy(buttons[buttonCount].text, "  View saved recording  ");
+                }
+                buttons[buttonCount].hotkey[0] = VIEW_RECORDING_KEY;
+                buttonCount++;
+                        
+                sprintf(buttons[buttonCount].text, "    %s---", darkGrayColorEscape);
+                buttons[buttonCount].flags &= ~B_ENABLED;
+                buttonCount++;
             }
-            buttons[buttonCount].hotkey[0] = SAVE_GAME_KEY;
-            buttonCount++;
-            if (KEYBOARD_LABELS) {
-                sprintf(buttons[buttonCount].text, "  %sO: %sOpen suspended game  ",        yellowColorEscape, whiteColorEscape);
-            } else {
-                strcpy(buttons[buttonCount].text, "  Open suspended game  ");
-            }
-            buttons[buttonCount].hotkey[0] = LOAD_SAVED_GAME_KEY;
-
         }
-        if (KEYBOARD_LABELS) {
-            sprintf(buttons[buttonCount].text, "  %sV: %sView saved recording  ",       yellowColorEscape, whiteColorEscape);
-        } else {
-            strcpy(buttons[buttonCount].text, "  View saved recording  ");
-        }
-        buttons[buttonCount].hotkey[0] = VIEW_RECORDING_KEY;
-        buttonCount++;
-        sprintf(buttons[buttonCount].text, "    %s---", darkGrayColorEscape);
-        buttons[buttonCount].flags &= ~B_ENABLED;
-        buttonCount++;
-
+        
         if (KEYBOARD_LABELS) {
             sprintf(buttons[buttonCount].text, "  %s\\: %s[%s] Hide color effects  ",   yellowColorEscape, whiteColorEscape, rogue.trueColorMode ? "X" : " ");
         } else {
@@ -2298,7 +2301,7 @@ boolean pauseBrogue(short milliseconds) {
 
 void nextBrogueEvent(rogueEvent *returnEvent, boolean textInput, boolean colorsDance, boolean realInputEvenInPlayback) {
     rogueEvent recordingInput;
-    boolean repeatAgain;
+    boolean repeatAgain, interaction;
     short pauseDuration;
 
     returnEvent->eventType = EVENT_ERROR;
@@ -2313,8 +2316,8 @@ void nextBrogueEvent(rogueEvent *returnEvent, boolean textInput, boolean colorsD
                 if (pauseDuration && pauseBrogue(pauseDuration)) {
                     // if the player did something during playback
                     nextBrogueEvent(&recordingInput, false, false, true);
-                    executePlaybackInput(&recordingInput);
-                    repeatAgain = !rogue.playbackPaused;
+                    interaction = executePlaybackInput(&recordingInput);
+                    repeatAgain = !rogue.playbackPaused && interaction;
                 }
             }
         } while ((repeatAgain || rogue.playbackOOS) && !rogue.gameHasEnded);
@@ -2504,7 +2507,9 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             exploreKey(controlKey);
             break;
         case AUTOPLAY_KEY:
-            autoPlayLevel(controlKey);
+            if (confirm("Turn on autopilot?", false)) {
+                autoPlayLevel(controlKey);
+            }
             break;
         case MESSAGE_ARCHIVE_KEY:
             displayMessageArchive();
@@ -2516,7 +2521,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             printDiscoveriesScreen();
             break;
         case VIEW_RECORDING_KEY:
-            if (rogue.playbackMode) {
+            if (rogue.playbackMode || rogue.serverMode) {
                 return;
             }
             confirmMessages();
@@ -2532,7 +2537,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             }
             break;
         case LOAD_SAVED_GAME_KEY:
-            if (rogue.playbackMode) {
+            if (rogue.playbackMode || rogue.serverMode) {
                 return;
             }
             confirmMessages();
@@ -2548,7 +2553,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             }
             break;
         case SAVE_GAME_KEY:
-            if (rogue.playbackMode) {
+            if (rogue.playbackMode || rogue.serverMode) {
                 return;
             }
             if (confirm("Suspend this game? (This feature is still in beta.)", false)) {
@@ -2706,7 +2711,7 @@ boolean getInputTextString(char *inputText,
             }
         }
 #endif
-    } while (keystroke != RETURN_KEY && keystroke != ESCAPE_KEY && keystroke != ENTER_KEY);
+    } while (keystroke != RETURN_KEY && keystroke != ESCAPE_KEY);
 
     if (useDialogBox) {
         overlayDisplayBuffer(rbuf, NULL);
@@ -2833,7 +2838,6 @@ boolean confirm(char *prompt, boolean alsoDuringPlayback) {
     buttons[0].hotkey[0] = 'y';
     buttons[0].hotkey[1] = 'Y';
     buttons[0].hotkey[2] = RETURN_KEY;
-    buttons[0].hotkey[2] = ENTER_KEY;
     buttons[0].flags |= (B_WIDE_CLICK_AREA | B_KEYPRESS_HIGHLIGHT);
 
     initializeButton(&(buttons[1]));
@@ -4030,7 +4034,7 @@ void displayGrid(short **map) {
 
 void printSeed() {
     char buf[COLS];
-    sprintf(buf, "Dungeon seed #%lu; turn #%lu", rogue.seed, rogue.playerTurnNumber);
+    sprintf(buf, "Dungeon seed #%lu; turn #%lu; version %s", rogue.seed, rogue.playerTurnNumber, BROGUE_VERSION_STRING);
     message(buf, false);
 }
 

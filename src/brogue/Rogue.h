@@ -32,10 +32,10 @@
 #define USE_UNICODE
 
 // Brogue version: what the user sees in the menu and title
-#define BROGUE_VERSION_STRING "CE 1.7.5"
+#define BROGUE_VERSION_STRING "CE 1.8"
 // Recording version: replay/saves from a different version won't load
 // Cannot be longer than 16 chars
-#define BROGUE_RECORDING_VERSION_STRING "1.7.5"
+#define BROGUE_RECORDING_VERSION_STRING "CE 1.8"
 
 // debug macros -- define DEBUGGING as 1 to enable wizard mode.
 
@@ -320,6 +320,14 @@ enum eventTypes {
     END_OF_RECORDING,
     EVENT_ERROR,
     NUMBER_OF_EVENT_TYPES, // unused
+};
+
+enum notificationEventTypes {
+	GAMEOVER_QUIT,
+	GAMEOVER_DEATH,
+	GAMEOVER_VICTORY,
+	GAMEOVER_SUPERVICTORY,
+	GAMEOVER_RECORDING
 };
 
 typedef struct rogueEvent {
@@ -1128,8 +1136,7 @@ enum tileFlags {
 #define SEED_KEY            '~'
 #define EASY_MODE_KEY       '&'
 #define ESCAPE_KEY          '\033'
-#define RETURN_KEY          '\015'
-#define ENTER_KEY           '\012'
+#define RETURN_KEY          '\012'
 #define DELETE_KEY          '\177'
 #define TAB_KEY             '\t'
 #define SHIFT_TAB_KEY       25 // Cocoa reports shift-tab this way for some reason.
@@ -2316,6 +2323,7 @@ typedef struct playerCharacter {
     enum NGCommands nextGame;
     char nextGamePath[BROGUE_FILENAME_MAX];
     unsigned long nextGameSeed;
+    boolean serverMode;
 } playerCharacter;
 
 // Stores the necessary info about a level so it can be regenerated:
@@ -2601,6 +2609,7 @@ extern "C" {
     void initializeRogue(unsigned long seed);
     void gameOver(char *killedBy, boolean useCustomPhrasing);
     void victory(boolean superVictory);
+    void notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2);
     void enableEasyMode();
     int rand_range(int lowerBound, int upperBound);
     unsigned long seedRandomGenerator(unsigned long seed);
@@ -3123,11 +3132,12 @@ extern "C" {
     void recordMouseClick(short x, short y, boolean controlKey, boolean shiftKey);
     void OOSCheck(unsigned long x, short numberOfBytes);
     void RNGCheck();
-    void executePlaybackInput(rogueEvent *recordingInput);
+    boolean executePlaybackInput(rogueEvent *recordingInput);
     void getAvailableFilePath(char *filePath, const char *defaultPath, const char *suffix);
     boolean characterForbiddenInFilename(const char theChar);
     void saveGame();
-    void saveRecording();
+    void saveRecording(char *filePath);
+    void saveRecordingNoPrompt(char *filePath);
     void parseFile();
     void RNGLog(char *message);
 
@@ -3142,7 +3152,7 @@ extern "C" {
     short staffDiscordDuration(fixpt enchant);
     int staffProtection(fixpt enchant);
     short staffEntrancementDuration(fixpt enchant);
-    short ringWisdomMultiplier(fixpt enchant);
+    fixpt ringWisdomMultiplier(fixpt enchant);
     short charmHealing(fixpt enchant);
     int charmProtection(fixpt enchant);
     short charmShattering(fixpt enchant);

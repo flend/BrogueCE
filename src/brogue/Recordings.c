@@ -44,11 +44,11 @@ void considerFlushingBufferToFile() {
 // compresses a uchar into a char, discarding stuff we don't need
 unsigned char compressKeystroke(uchar c) {
     const uchar ucharTable[] = {UP_ARROW, LEFT_ARROW, DOWN_ARROW, RIGHT_ARROW,
-        ESCAPE_KEY, RETURN_KEY, ENTER_KEY, DELETE_KEY, TAB_KEY, NUMPAD_0, NUMPAD_1,
+        ESCAPE_KEY, RETURN_KEY, DELETE_KEY, TAB_KEY, NUMPAD_0, NUMPAD_1,
         NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6, NUMPAD_7, NUMPAD_8, NUMPAD_9};
     short i;
 
-    for (i=0; i<19; i++) {
+    for (i=0; i<18; i++) {
         if (ucharTable[i] == c) {
             return (unsigned char) (128 + i);
         }
@@ -264,7 +264,7 @@ unsigned char recallChar() {
 
 uchar uncompressKeystroke(uchar c) {
     const uchar ucharTable[] = {UP_ARROW, LEFT_ARROW, DOWN_ARROW, RIGHT_ARROW,
-        ESCAPE_KEY, RETURN_KEY, ENTER_KEY, DELETE_KEY, TAB_KEY, NUMPAD_0, NUMPAD_1,
+        ESCAPE_KEY, RETURN_KEY, DELETE_KEY, TAB_KEY, NUMPAD_0, NUMPAD_1,
         NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6, NUMPAD_7, NUMPAD_8, NUMPAD_9};
 
     if (c >= 128 && c <= UNKNOWN_KEY) {
@@ -737,7 +737,7 @@ void pausePlayback() {
 }
 
 // Used to interact with playback -- e.g. changing speed, pausing.
-void executePlaybackInput(rogueEvent *recordingInput) {
+boolean executePlaybackInput(rogueEvent *recordingInput) {
     signed long key;
     short newDelay, frameCount, x, y, previousDeepestLevel;
     unsigned long destinationFrame;
@@ -746,7 +746,7 @@ void executePlaybackInput(rogueEvent *recordingInput) {
     char path[BROGUE_FILENAME_MAX];
 
     if (!rogue.playbackMode) {
-        return;
+        return false;
     }
 
     if (recordingInput->eventType == KEYSTROKE) {
@@ -762,7 +762,7 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                 }
                 rogue.playbackDelayPerTurn = newDelay;
                 rogue.playbackDelayThisTurn = rogue.playbackDelayPerTurn;
-                break;
+                return true;
             case DOWN_ARROW:
             case DOWN_KEY:
                 newDelay = min(3000, max(rogue.playbackDelayPerTurn * 1.5, rogue.playbackDelayPerTurn + 1));
@@ -771,14 +771,14 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                 }
                 rogue.playbackDelayPerTurn = newDelay;
                 rogue.playbackDelayThisTurn = rogue.playbackDelayPerTurn;
-                break;
+                return true;
             case ACKNOWLEDGE_KEY:
                 if (rogue.playbackOOS && rogue.playbackPaused) {
                     flashTemporaryAlert(" Out of sync ", 2000);
                 } else {
                     rogue.playbackPaused = !rogue.playbackPaused;
                 }
-                break;
+                return true;
             case TAB_KEY:
                 rogue.playbackOmniscience = !rogue.playbackOmniscience;
                 displayLevel();
@@ -788,7 +788,7 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                 } else {
                     messageWithColor("Omniscience disabled.", &teal, false);
                 }
-                break;
+                return true;
             case DESCEND_KEY:
                 pauseState = rogue.playbackPaused;
                 previousDeepestLevel = rogue.deepestLevel;
@@ -814,12 +814,12 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                     }
                 }
                 rogue.playbackPaused = pauseState;
-                break;
+                return true;
             case INVENTORY_KEY:
                 rogue.playbackMode = false;
                 displayInventory(ALL_ITEMS, 0, 0, true, false);
                 rogue.playbackMode = true;
-                break;
+                return true;
             case RIGHT_KEY:
             case RIGHT_ARROW:
             case LEFT_KEY:
@@ -876,20 +876,20 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                         refreshSideBar(-1, -1, false);
                     }
                 }
-                break;
+                return true;
             case HELP_KEY:
                 printPlaybackHelpScreen();
-                break;
+                return true;
             case DISCOVERIES_KEY:
                 rogue.playbackMode = false;
                 printDiscoveriesScreen();
                 rogue.playbackMode = true;
-                break;
+                return true;
             case MESSAGE_ARCHIVE_KEY:
                 rogue.playbackMode = false;
                 displayMessageArchive();
                 rogue.playbackMode = true;
-                break;
+                return true;
             case VIEW_RECORDING_KEY:
                 confirmMessages();
                 rogue.playbackMode = false;
@@ -903,7 +903,7 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                     }
                 }
                 rogue.playbackMode = true;
-                break;
+                return true;
             case LOAD_SAVED_GAME_KEY:
                 confirmMessages();
                 rogue.playbackMode = false;
@@ -917,7 +917,7 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                     }
                 }
                 rogue.playbackMode = true;
-                break;
+                return true;
             case NEW_GAME_KEY:
                 rogue.playbackMode = false;
                 if (confirm("Close recording and begin a new game?", true)) {
@@ -925,13 +925,14 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                     rogue.gameHasEnded = true;
                 }
                 rogue.playbackMode = true;
-                break;
+                return true;
             case QUIT_KEY:
                 //freeEverything();
                 rogue.gameHasEnded = true;
                 rogue.playbackOOS = false;
                 rogue.creaturesWillFlashThisTurn = false;
-                break;
+                notifyEvent(GAMEOVER_RECORDING, 0, 0, "recording ended", "none");
+                return true;
             case TRUE_COLORS_KEY:
                 rogue.trueColorMode = !rogue.trueColorMode;
                 displayLevel();
@@ -943,7 +944,7 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                     messageWithColor(KEYBOARD_LABELS ? "Color effects enabled. Press '\\' again to disable." : "Color effects enabled.",
                                      &teal, false);
                 }
-                break;
+                return true;
             case AGGRO_DISPLAY_KEY:
                 rogue.displayAggroRangeMode = !rogue.displayAggroRangeMode;
                 displayLevel();
@@ -955,20 +956,21 @@ void executePlaybackInput(rogueEvent *recordingInput) {
                     messageWithColor(KEYBOARD_LABELS ? "Stealth range hidden. Press ']' again to display." : "Stealth range hidden.",
                                      &teal, false);
                 }
-                break;
+                return true;
             case SEED_KEY:
                 //rogue.playbackMode = false;
                 //DEBUG {displayGrid(safetyMap); displayMoreSign(); displayLevel();}
                 //rogue.playbackMode = true;
                 printSeed();
-                break;
+                return true;
             default:
                 if (key >= '0' && key <= '9'
                     || key >= NUMPAD_0 && key <= NUMPAD_9) {
 
                     promptToAdvanceToLocation(key);
+                    return true;
                 }
-                break;
+                return false;
         }
     } else if (recordingInput->eventType == MOUSE_UP) {
         x = recordingInput->param1;
@@ -978,12 +980,15 @@ void executePlaybackInput(rogueEvent *recordingInput) {
             rogue.playbackMode = false;
             displayMessageArchive();
             rogue.playbackMode = true;
+            return true;
         }
     } else if (recordingInput->eventType == RIGHT_MOUSE_UP) {
         rogue.playbackMode = false;
         displayInventory(ALL_ITEMS, 0, 0, true, false);
         rogue.playbackMode = true;
+        return true;
     }
+    return false;
 }
 
 // Pass in defaultPath (the file name WITHOUT suffix), and the suffix.
@@ -1041,8 +1046,19 @@ void saveGame() {
     deleteMessages();
 }
 
-void saveRecording() {
-    char filePath[BROGUE_FILENAME_MAX], defaultPath[BROGUE_FILENAME_MAX];
+void saveRecordingNoPrompt(char *filePath)
+{
+    if (rogue.playbackMode) {
+        return;
+    }
+    getAvailableFilePath(filePath, "Recording", RECORDING_SUFFIX);
+    strcat(filePath, RECORDING_SUFFIX);
+    remove(filePath);
+    rename(currentFilePath, filePath);
+}
+
+void saveRecording(char *filePath) {
+    char defaultPath[BROGUE_FILENAME_MAX];
     boolean askAgain;
 
     if (rogue.playbackMode) {
@@ -1179,23 +1195,23 @@ void loadSavedGame() {
 void describeKeystroke(unsigned char key, char *description) {
     short i;
     uchar c;
-    const uchar ucharList[52] = {UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, UP_ARROW, LEFT_ARROW,
+    const uchar ucharList[51] = {UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, UP_ARROW, LEFT_ARROW,
         DOWN_ARROW, RIGHT_ARROW, UPLEFT_KEY, UPRIGHT_KEY, DOWNLEFT_KEY, DOWNRIGHT_KEY,
         DESCEND_KEY, ASCEND_KEY, REST_KEY, AUTO_REST_KEY, SEARCH_KEY, INVENTORY_KEY,
         ACKNOWLEDGE_KEY, EQUIP_KEY, UNEQUIP_KEY, APPLY_KEY, THROW_KEY, RELABEL_KEY, DROP_KEY, CALL_KEY,
         //FIGHT_KEY, FIGHT_TO_DEATH_KEY,
         HELP_KEY, DISCOVERIES_KEY, RETURN_KEY,
         EXPLORE_KEY, AUTOPLAY_KEY, SEED_KEY, EASY_MODE_KEY, ESCAPE_KEY,
-        RETURN_KEY, ENTER_KEY, DELETE_KEY, TAB_KEY, PERIOD_KEY, VIEW_RECORDING_KEY, NUMPAD_0,
+        RETURN_KEY, DELETE_KEY, TAB_KEY, PERIOD_KEY, VIEW_RECORDING_KEY, NUMPAD_0,
         NUMPAD_1, NUMPAD_2, NUMPAD_3, NUMPAD_4, NUMPAD_5, NUMPAD_6, NUMPAD_7, NUMPAD_8,
         NUMPAD_9, UNKNOWN_KEY};
-    const char descList[53][30] = {"up", "down", "left", "right", "up arrow", "left arrow",
+    const char descList[52][30] = {"up", "down", "left", "right", "up arrow", "left arrow",
         "down arrow", "right arrow", "upleft", "upright", "downleft", "downright",
         "descend", "ascend", "rest", "auto rest", "search", "inventory", "acknowledge",
         "equip", "unequip", "apply", "throw", "relabel", "drop", "call",
         //"fight", "fight to death",
         "help", "discoveries", "repeat travel", "explore", "autoplay", "seed",
-        "easy mode", "escape", "return", "enter", "delete", "tab", "period", "open file",
+        "easy mode", "escape", "return", "delete", "tab", "period", "open file",
         "numpad 0", "numpad 1", "numpad 2", "numpad 3", "numpad 4", "numpad 5", "numpad 6",
         "numpad 7", "numpad 8", "numpad 9", "unknown", "ERROR"};
 

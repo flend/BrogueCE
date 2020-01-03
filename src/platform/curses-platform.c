@@ -16,7 +16,7 @@ static void gameLoop() {
     if (!Term.start()) {
         return;
     }
-    Term.title("Brogue " BROGUE_VERSION_STRING);
+    Term.title("Brogue");
     Term.resize(COLS, ROWS);
 
     rogueMain();
@@ -215,13 +215,18 @@ static boolean modifier_held(int modifier) {
     return 0;
 }
 
+static void notify_event(short eventId, int data1, int data2, const char *str1, const char *str2) { 
+    //Unused
+}
+
 struct brogueConsole cursesConsole = {
     gameLoop,
     curses_pauseForMilliseconds,
     curses_nextKeyOrMouseEvent,
     curses_plotChar,
     curses_remap,
-    modifier_held
+    modifier_held,
+    notify_event
 };
 #endif
 
