@@ -299,8 +299,11 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
 
     if (returnEvent->eventType == KEYSTROKE)
     {
-
         unsigned short keyCharacter = inputBuffer[1] << 8 | inputBuffer[2];
+
+        //Remap return key on web
+        if (keyCharacter == 13)
+            keyCharacter = RETURN_KEY;
 
         returnEvent->param1 = keyCharacter; //key character
         returnEvent->controlKey = inputBuffer[3];
