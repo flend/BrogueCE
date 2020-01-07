@@ -130,8 +130,6 @@ static void curses_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInpu
 
     Term.refresh();
 
-    if (noMenu && rogue.nextGame == NG_NOTHING) rogue.nextGame = NG_NEW_GAME;
-
     for (;;) {
         theTime = getTime(); //TCOD_sys_elapsed_milli();
 
