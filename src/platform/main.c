@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if(strcmp(argv[i], "-n") == 0) {
+        if (strcmp(argv[i], "-n") == 0) {
             if (rogue.nextGameSeed == 0) {
                 rogue.nextGame = NG_NEW_GAME;
             } else {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        if(strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--open") == 0) {
+        if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--open") == 0) {
             if (i + 1 < argc) {
                 strncpy(rogue.nextGamePath, argv[i + 1], BROGUE_FILENAME_MAX);
                 rogue.nextGamePath[BROGUE_FILENAME_MAX - 1] = '\0';
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--view") == 0) {
+        if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--view") == 0) {
             if (i + 1 < argc) {
                 strncpy(rogue.nextGamePath, argv[i + 1], BROGUE_FILENAME_MAX);
                 rogue.nextGamePath[BROGUE_FILENAME_MAX - 1] = '\0';
