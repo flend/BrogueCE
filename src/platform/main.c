@@ -5,6 +5,7 @@ struct brogueConsole currentConsole;
 
 unsigned long int firstSeed = 0;
 int brogueFontSize = 0;
+boolean serverMode = false;
 
 void dumpScores();
 
@@ -182,7 +183,7 @@ int main(int argc, char *argv[])
         if(strcmp(argv[i], "--server-mode") == 0) {
             currentConsole = webConsole;
             rogue.nextGame = NG_NEW_GAME;
-            rogue.serverMode = true;
+            serverMode = true;
             continue;
         }
 #endif

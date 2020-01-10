@@ -27,6 +27,8 @@
 #include "Rogue.h"
 #include "IncludeGlobals.h"
 
+extern boolean serverMode;
+
 // Populates path[][] with a list of coordinates starting at origin and traversing down the map. Returns the number of steps in the path.
 short getPlayerPathOnMap(short path[1000][2], short **map, short originX, short originY) {
     short dir, x, y, steps;
@@ -275,7 +277,7 @@ short actionMenu(short x, boolean playingBack) {
             buttons[buttonCount].flags &= ~B_ENABLED;
             buttonCount++;
 
-            if(!rogue.serverMode) {
+            if(!serverMode) {
                 if (KEYBOARD_LABELS) {
                     sprintf(buttons[buttonCount].text, "  %sS: %sSuspend game and quit  ",  yellowColorEscape, whiteColorEscape);
                 } else {
@@ -2503,7 +2505,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             printDiscoveriesScreen();
             break;
         case VIEW_RECORDING_KEY:
-            if (rogue.playbackMode || rogue.serverMode) {
+            if (rogue.playbackMode || serverMode) {
                 return;
             }
             confirmMessages();
@@ -2519,7 +2521,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             }
             break;
         case LOAD_SAVED_GAME_KEY:
-            if (rogue.playbackMode || rogue.serverMode) {
+            if (rogue.playbackMode || serverMode) {
                 return;
             }
             confirmMessages();
@@ -2535,7 +2537,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             }
             break;
         case SAVE_GAME_KEY:
-            if (rogue.playbackMode || rogue.serverMode) {
+            if (rogue.playbackMode || serverMode) {
                 return;
             }
             if (confirm("Suspend this game? (This feature is still in beta.)", false)) {

@@ -25,6 +25,8 @@
 #include "IncludeGlobals.h"
 #include <time.h>
 
+extern boolean serverMode;
+
 void rogueMain() {
     previousGameSeed = 0;
     initializeBrogueSaveLocation();
@@ -209,7 +211,7 @@ void generateFontFiles() {
 void initializeRogue(unsigned long seed) {
     short i, j, k;
     item *theItem;
-    boolean playingback, playbackFF, playbackPaused, serverMode;
+    boolean playingback, playbackFF, playbackPaused;
     short oldRNG;
 
     // generate font bitmap
@@ -221,12 +223,10 @@ void initializeRogue(unsigned long seed) {
     playingback = rogue.playbackMode; // the only four animals that need to go on the ark
     playbackPaused = rogue.playbackPaused;
     playbackFF = rogue.playbackFastForward;
-    serverMode = rogue.serverMode;
     memset((void *) &rogue, 0, sizeof( playerCharacter )); // the flood
     rogue.playbackMode = playingback;
     rogue.playbackPaused = playbackPaused;
     rogue.playbackFastForward = playbackFF;
-    rogue.serverMode = serverMode;
 
     rogue.gameHasEnded = false;
     rogue.highScoreSaved = false;
@@ -1174,7 +1174,7 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         displayMoreSign();
     }
 
-    if (rogue.serverMode) {
+    if (serverMode) {
         blackOutScreen();
         saveRecordingNoPrompt(recordingFilename);
     } else {
@@ -1303,7 +1303,7 @@ void victory(boolean superVictory) {
     displayMoreSign();
     rogue.playbackMode = isPlayback;
 
-    if (rogue.serverMode) {
+    if (serverMode) {
         saveRecordingNoPrompt(recordingFilename);
     } else {
         saveRecording(recordingFilename);
