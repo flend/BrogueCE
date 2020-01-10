@@ -22,6 +22,8 @@
 
 #define EVENT_MESSAGE1_START 19
 #define EVENT_MESSAGE2_START 70
+#define EVENT_MESSAGE1_SIZE 51
+#define EVENT_MESSAGE2_SIZE 30
 #define EVENT_SIZE 100
 #define MAX_INPUT_SIZE 5
 #define MOUSE_INPUT_SIZE 4
@@ -44,9 +46,9 @@ static struct sockaddr_un addr_write;
 static int wfd, rfd;
 
 static FILE *logfile;
-static char output_buffer[OUTPUT_BUFFER_SIZE];
-static int output_buffer_pos = 0;
-static int refresh_screen_only = 0;
+static unsigned char outputBuffer[OUTPUT_BUFFER_SIZE];
+static int outputBufferPos = 0;
+static int refreshScreenOnly = 0;
 
 static void gameLoop();
 static void openLogfile();
@@ -114,31 +116,25 @@ int readFromSocket(unsigned char *buf, int size) {
 
 static void flushOutputBuffer() {
     int no_bytes_sent;
-    no_bytes_sent = sendto(wfd, output_buffer, output_buffer_pos, 0, (struct sockaddr *)&addr_write, sizeof(struct sockaddr_un));
-    if (no_bytes_sent != output_buffer_pos)
+    no_bytes_sent = sendto(wfd, outputBuffer, outputBufferPos, 0, (struct sockaddr *)&addr_write, sizeof(struct sockaddr_un));
+    if (no_bytes_sent != outputBufferPos)
     {
         char msg[80];
         snprintf(msg, 80, "Sent %ld bytes only %s\n", (long)no_bytes_sent, strerror(errno));
         writeToLog(msg);
     }
 
-    output_buffer_pos = 0;
+    outputBufferPos = 0;
 }
 
 static void writeToSocket(unsigned char *buf, int size)
 {
-    if (output_buffer_pos + size > OUTPUT_BUFFER_SIZE) {
+    if (outputBufferPos + size > OUTPUT_BUFFER_SIZE) {
         flushOutputBuffer();
     }
 
-    //memcpy(output_buffer + output_buffer_pos, buf, size);
-    int i;
-    for (i = 0; i < size; i++)
-    {
-        output_buffer[i + output_buffer_pos] = buf[i];
-    }
-
-    output_buffer_pos += size;
+    memcpy(outputBuffer + outputBufferPos, buf, size);
+    outputBufferPos += size;
 }
 
 static void web_plotChar(uchar inputChar,
@@ -192,8 +188,9 @@ static void sendStatusUpdate() {
     statusValues[SEED_STATUS] = rogue.seed;
     statusValues[EASY_MODE_STATUS] = rogue.easyMode;
 
-    for (i = 0; i < STATUS_TYPES_NUMBER; i++) {
+    memset(statusOutputBuffer, 0, OUTPUT_SIZE);
 
+    for (i = 0; i < STATUS_TYPES_NUMBER; i++) {
         // Coordinates of (255, 255) will let the server and client know that this is a status update rather than a cell update
         statusOutputBuffer[0] = 255;
         statusOutputBuffer[1] = 255;
@@ -245,10 +242,10 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     colorsDance = false;
 
     // Send a status update of game variables we want on the client
-    if (!refresh_screen_only) {
+    if (!refreshScreenOnly) {
         sendStatusUpdate();
     }
-    refresh_screen_only = 0;
+    refreshScreenOnly = 0;
 
     // Flush output buffer
     flushOutputBuffer();
@@ -261,7 +258,7 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
         // Custom event type - not a command for the brogue game
         refreshScreen();
         // Don't send a status update if this was only a screen refresh (may be sent by observer)
-        refresh_screen_only = 1;
+        refreshScreenOnly = 1;
         return;
     }
 
@@ -296,7 +293,6 @@ static boolean web_modifierHeld(int modifier) {
 
 static void web_notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2) {
     unsigned char statusOutputBuffer[EVENT_SIZE];
-    int i;
 
     // Coordinates of (254, 254) will let the server and client know that this is a event notification update rather than a cell update
     statusOutputBuffer[0] = 254;
@@ -322,24 +318,10 @@ static void web_notifyEvent(short eventId, int data1, int data2, const char *str
     statusOutputBuffer[18] = rogue.seed;
 
     // str1 is the death / victory message
-
-    for (i = EVENT_MESSAGE1_START; i < EVENT_MESSAGE2_START; i++) {
-        statusOutputBuffer[i] = str1[i - EVENT_MESSAGE1_START];
-        if (!str1[i - EVENT_MESSAGE1_START])
-            break;
-    }
-
-    if (i == EVENT_MESSAGE2_START) {
-        statusOutputBuffer[EVENT_MESSAGE2_START - 1] = 0;
-    }
-
+    memcpy(statusOutputBuffer + EVENT_MESSAGE1_START, str1, EVENT_MESSAGE1_SIZE);
+    statusOutputBuffer[EVENT_MESSAGE2_START - 1] = 0;
     // str2 is unused
-
-    for (i = EVENT_MESSAGE2_START; i < EVENT_SIZE; i++) {
-        statusOutputBuffer[i] = str2[i - EVENT_MESSAGE2_START];
-        if (!str2[i - EVENT_MESSAGE2_START])
-            break;
-    }
+    memcpy(statusOutputBuffer + EVENT_MESSAGE1_START + EVENT_MESSAGE1_SIZE, str2, EVENT_MESSAGE2_SIZE);
     statusOutputBuffer[EVENT_SIZE - 1] = 0;
 
     writeToSocket(statusOutputBuffer, EVENT_SIZE);
