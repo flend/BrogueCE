@@ -213,28 +213,22 @@ static void sendStatusUpdate() {
     }
 }
 
-// Used both for checking input and pausing
+// Pause by doing a blocking poll on the socket
 static boolean web_pauseForMilliseconds(short milliseconds) {
-    struct timespec delay;
-    delay.tv_sec = 0;
-    delay.tv_nsec = milliseconds * 1000000L;
-
-    nanosleep(&delay, NULL);
-
-    //Poll for input data
-
     fd_set input;
+    struct timeval timeout;
+
     FD_ZERO(&input);
     FD_SET(rfd, &input);
 
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
+    timeout.tv_sec = milliseconds / 1000;
+    timeout.tv_usec = milliseconds % 1000;
 
     return select(rfd + 1, &input, NULL, NULL, &timeout);
 }
 
 static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, boolean colorsDance) {
+
     unsigned char inputBuffer[MAX_INPUT_SIZE];
     unsigned short keyCharacter;
 
@@ -250,8 +244,22 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     // Flush output buffer
     flushOutputBuffer();
 
-    // Read command from server
-    readFromSocket(inputBuffer, MAX_INPUT_SIZE);
+    // May need to poll for some time here
+
+    // Block for next command if needed
+    if (!readFromSocket(inputBuffer, MAX_INPUT_SIZE)) {
+        fd_set input;
+        struct timeval timeout;
+
+        FD_ZERO(&input);
+        FD_SET(rfd, &input);
+
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 0;
+
+        select(rfd + 1, &input, NULL, NULL, &timeout);
+    }
+
     returnEvent->eventType = inputBuffer[0];
 
     if (returnEvent->eventType == REFRESH_SCREEN) {
