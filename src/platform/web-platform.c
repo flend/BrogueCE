@@ -231,6 +231,8 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
 
     unsigned char inputBuffer[MAX_INPUT_SIZE];
     unsigned short keyCharacter;
+    ssize_t received_bytes;
+     char msg[80];
 
     // Because we will halt execution until we get more input, we definitely cannot have any dancing colors from the server side.
     colorsDance = false;
@@ -244,21 +246,13 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     // Flush output buffer
     flushOutputBuffer();
 
-    // May need to poll for some time here
-
-    // Block for next command if needed
-    if (!readFromSocket(inputBuffer, MAX_INPUT_SIZE)) {
-        fd_set input;
-        struct timeval timeout;
-
-        FD_ZERO(&input);
-        FD_SET(rfd, &input);
-
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 0;
-
-        select(rfd + 1, &input, NULL, NULL, &timeout);
-    }
+    // Block for next command
+    sprintf(msg, "waiting");
+    writeToLog(msg);
+    received_bytes = readFromSocket(inputBuffer, MAX_INPUT_SIZE);
+   
+    sprintf(msg, "bytes: %d : %d,%d\n", received_bytes, inputBuffer[0], inputBuffer[1]);
+    writeToLog(msg);
 
     returnEvent->eventType = inputBuffer[0];
 
