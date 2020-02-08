@@ -25,6 +25,8 @@
 #include "IncludeGlobals.h"
 #include <time.h>
 
+extern boolean serverMode;
+
 void rogueMain() {
     previousGameSeed = 0;
     mainBrogueJunction();
@@ -208,7 +210,7 @@ void generateFontFiles() {
 void initializeRogue(unsigned long seed) {
     short i, j, k;
     item *theItem;
-    boolean playingback, playbackFF, playbackPaused, serverMode;
+    boolean playingback, playbackFF, playbackPaused;
     short oldRNG;
 
     // generate font bitmap
@@ -220,12 +222,10 @@ void initializeRogue(unsigned long seed) {
     playingback = rogue.playbackMode; // the only four animals that need to go on the ark
     playbackPaused = rogue.playbackPaused;
     playbackFF = rogue.playbackFastForward;
-    serverMode = rogue.serverMode;
     memset((void *) &rogue, 0, sizeof( playerCharacter )); // the flood
     rogue.playbackMode = playingback;
     rogue.playbackPaused = playbackPaused;
     rogue.playbackFastForward = playbackFF;
-    rogue.serverMode = serverMode;
 
     rogue.gameHasEnded = false;
     rogue.highScoreSaved = false;
@@ -1139,11 +1139,10 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         displayMoreSign();
     }
 
-    if (rogue.serverMode) {
+    if (serverMode) {
         blackOutScreen();
         saveRecordingNoPrompt(recordingFilename);
-    }
-    else {
+    } else {
         if (saveHighScore(theEntry)) {
             printHighScores(true);
         }
@@ -1151,15 +1150,13 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         saveRecording(recordingFilename);
     }
 
-    if(!rogue.playbackMode) {
-        if(!rogue.quit) {
+    if (!rogue.playbackMode) {
+        if (!rogue.quit) {
             notifyEvent(GAMEOVER_DEATH, theEntry.score, 0, theEntry.description, recordingFilename);
-        }
-        else {
+        } else {
             notifyEvent(GAMEOVER_QUIT, theEntry.score, 0, theEntry.description, recordingFilename);
         }
-    }
-    else {
+    } else {
         notifyEvent(GAMEOVER_RECORDING, 0, 0, "recording ended", "none");
     }
 
@@ -1271,10 +1268,9 @@ void victory(boolean superVictory) {
     displayMoreSign();
     rogue.playbackMode = isPlayback;
 
-    if (rogue.serverMode) {
+    if (serverMode) {
         saveRecordingNoPrompt(recordingFilename);
-    }
-    else {
+    } else {
         saveRecording(recordingFilename);
         printHighScores(qualified);
     }
@@ -1282,12 +1278,10 @@ void victory(boolean superVictory) {
     if (!rogue.playbackMode) {
         if (superVictory) {
             notifyEvent(GAMEOVER_SUPERVICTORY, theEntry.score, 0, theEntry.description, recordingFilename);
-        }
-        else {
+        } else {
             notifyEvent(GAMEOVER_VICTORY, theEntry.score, 0, theEntry.description, recordingFilename);
         }
-    }
-    else {
+    } else {
         notifyEvent(GAMEOVER_RECORDING, 0, 0, "recording ended", "none");
     }
 

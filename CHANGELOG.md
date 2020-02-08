@@ -120,6 +120,8 @@ Other changes
   versions. (Unfortunately, this means it has lost some Mac-specific polish,
   e.g. it is no longer an App. This will be improved in future releases)
 -
+  Adding the `--server-mode` command line parameter used to run the game from an external launcher
+-
   Turning on autopilot now requires confirmation
 -
   The "blue" player-to-monster combat information is now displayed in ally

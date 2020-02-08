@@ -19,16 +19,18 @@
 #define CLIENT_SOCKET "client-socket"
 
 #define OUTPUT_SIZE 10
+
+#define EVENT_MESSAGE1_START 19
+#define EVENT_MESSAGE2_START 70
+#define EVENT_MESSAGE1_SIZE 51
+#define EVENT_MESSAGE2_SIZE 30
 #define EVENT_SIZE 100
 #define MAX_INPUT_SIZE 5
 #define MOUSE_INPUT_SIZE 4
-#define KEY_INPUT_SIZE 4
 #define OUTPUT_BUFFER_SIZE 1000
 
 //Custom events
 #define REFRESH_SCREEN 50
-
-#define PERMIT_CLIENT_MOUSELOOK 1
 
 enum StatusTypes
 {
@@ -44,32 +46,31 @@ static struct sockaddr_un addr_write;
 static int wfd, rfd;
 
 static FILE *logfile;
-static char output_buffer[OUTPUT_BUFFER_SIZE];
-static int output_buffer_pos = 0;
-static int refresh_screen_only = 0;
+static unsigned char outputBuffer[OUTPUT_BUFFER_SIZE];
+static int outputBufferPos = 0;
+static int refreshScreenOnly = 0;
 
-static void open_logfile();
-static void close_logfile();
-static void write_to_log(const char *msg);
-static void setup_sockets();
-static int read_from_socket(unsigned char *buf, int size);
-static void write_to_socket(unsigned char *buf, int size);
-static void flush_output_buffer();
+static void gameLoop();
+static void openLogfile();
+static void closeLogfile();
+static void writeToLog (const char *msg);
+static void setupSockets();
+static int readFromSocket(unsigned char *buf, int size);
+static void writeToSocket(unsigned char *buf, int size);
+static void flushOutputBuffer();
 
-static void gameLoop()
-{
-    open_logfile();
-    write_to_log("Logfile started\n");
+static void gameLoop() {
+    openLogfile();
+    writeToLog ("Logfile started\n");
 
-    setup_sockets();
+    setupSockets();
 
     rogueMain();
 
-    close_logfile();
+    closeLogfile();
 }
 
-static void open_logfile()
-{
+static void openLogfile() {
     logfile = fopen("brogue-web.txt", "a");
     if (logfile == NULL)
     {
@@ -77,24 +78,19 @@ static void open_logfile()
     }
 }
 
-static void close_logfile()
-{
+static void closeLogfile() {
     fclose(logfile);
 }
 
-static void write_to_log(const char *msg)
-{
+static void writeToLog(const char *msg) {
     fprintf(logfile, msg);
     fflush(logfile);
 }
 
-static void setup_sockets()
-{
-
+static void setupSockets() {
     struct sockaddr_un addr_read;
 
-    // Read socket (from external)
-
+    // Open read socket (from external)
     rfd = socket(AF_UNIX, SOCK_DGRAM, 0);
     remove(SERVER_SOCKET);
 
@@ -104,11 +100,7 @@ static void setup_sockets()
 
     bind(rfd, (struct sockaddr *)&addr_read, sizeof(struct sockaddr_un));
 
-    //non-blocking may not be desirable
-    //fcntl(socket, F_SETFL, O_NONBLOCK);
-
-    // Write socket (to external)
-
+    // Open write socket (to external)
     wfd = socket(AF_UNIX, SOCK_DGRAM, 0);
 
     memset(&addr_write, 0, sizeof(struct sockaddr_un));
@@ -116,58 +108,39 @@ static void setup_sockets()
     strncpy(addr_write.sun_path, CLIENT_SOCKET, sizeof(addr_write.sun_path) - 1);
 }
 
-//Returns -1 if no data available (if in non-blocking mode)
-int read_from_socket(unsigned char *buf, int size)
-{
-
-    int bytes_received = recvfrom(rfd, buf, size, 0, NULL, NULL);
-    return bytes_received;
+int readFromSocket(unsigned char *buf, int size) {
+    return recvfrom(rfd, buf, size, 0, NULL, NULL);
 }
 
-static void flush_output_buffer()
-{
-
-    //char msg[80];
-    //snprintf(msg, 80, "Flushing at %i\n", output_buffer_pos);
-    //write_to_log(msg);
-
+static void flushOutputBuffer() {
+    char msg[80];
     int no_bytes_sent;
-    no_bytes_sent = sendto(wfd, output_buffer, output_buffer_pos, 0, (struct sockaddr *)&addr_write, sizeof(struct sockaddr_un));
-    if (no_bytes_sent != output_buffer_pos)
+
+    no_bytes_sent = sendto(wfd, outputBuffer, outputBufferPos, 0, (struct sockaddr *)&addr_write, sizeof(struct sockaddr_un));
+    if (no_bytes_sent != outputBufferPos)
     {
-        char msg[80];
         snprintf(msg, 80, "Sent %ld bytes only %s\n", (long)no_bytes_sent, strerror(errno));
-        write_to_log(msg);
-        sleep(1);
+        writeToLog(msg);
     }
 
-    output_buffer_pos = 0;
+    outputBufferPos = 0;
 }
 
-static void write_to_socket(unsigned char *buf, int size)
+static void writeToSocket(unsigned char *buf, int size)
 {
-    if (output_buffer_pos + size > OUTPUT_BUFFER_SIZE)
-    {
-        flush_output_buffer();
+    if (outputBufferPos + size > OUTPUT_BUFFER_SIZE) {
+        flushOutputBuffer();
     }
 
-    //memcpy(output_buffer + output_buffer_pos, buf, size);
-    int i;
-    for (i = 0; i < size; i++)
-    {
-        output_buffer[i + output_buffer_pos] = buf[i];
-    }
-
-    output_buffer_pos += size;
+    memcpy(outputBuffer + outputBufferPos, buf, size);
+    outputBufferPos += size;
 }
 
 static void web_plotChar(uchar inputChar,
                          short xLoc, short yLoc,
                          short foreRed, short foreGreen, short foreBlue,
-                         short backRed, short backGreen, short backBlue)
-{
+                         short backRed, short backGreen, short backBlue) {
     unsigned char outputBuffer[OUTPUT_SIZE];
-
     unsigned char firstCharByte, secondCharByte;
     uchar translatedChar = inputChar;
 
@@ -190,124 +163,111 @@ static void web_plotChar(uchar inputChar,
     firstCharByte = translatedChar >> 8 & 0xff;
     secondCharByte = translatedChar;
 
-    outputBuffer[0] = (char)xLoc;
-    outputBuffer[1] = (char)yLoc;
+    outputBuffer[0] = (unsigned char)xLoc;
+    outputBuffer[1] = (unsigned char)yLoc;
     outputBuffer[2] = firstCharByte;
     outputBuffer[3] = secondCharByte;
-    outputBuffer[4] = (char)foreRed * 255 / 100;
-    outputBuffer[5] = (char)foreGreen * 255 / 100;
-    outputBuffer[6] = (char)foreBlue * 255 / 100;
-    outputBuffer[7] = (char)backRed * 255 / 100;
-    outputBuffer[8] = (char)backGreen * 255 / 100;
-    outputBuffer[9] = (char)backBlue * 255 / 100;
+    outputBuffer[4] = (unsigned char)foreRed * 255 / 100;
+    outputBuffer[5] = (unsigned char)foreGreen * 255 / 100;
+    outputBuffer[6] = (unsigned char)foreBlue * 255 / 100;
+    outputBuffer[7] = (unsigned char)backRed * 255 / 100;
+    outputBuffer[8] = (unsigned char)backGreen * 255 / 100;
+    outputBuffer[9] = (unsigned char)backBlue * 255 / 100;
 
-    write_to_socket(outputBuffer, OUTPUT_SIZE);
+    writeToSocket(outputBuffer, OUTPUT_SIZE);
 }
 
-static void sendStatusUpdate()
-{
+static void sendStatusUpdate() {
     unsigned char statusOutputBuffer[OUTPUT_SIZE];
-
     unsigned long statusValues[STATUS_TYPES_NUMBER];
+    int i, j;
+
     statusValues[DEEPEST_LEVEL_STATUS] = rogue.deepestLevel;
     statusValues[GOLD_STATUS] = rogue.gold;
     statusValues[SEED_STATUS] = rogue.seed;
     statusValues[EASY_MODE_STATUS] = rogue.easyMode;
 
-    int i;
-    int j;
-    for (i = 0; i < STATUS_TYPES_NUMBER; i++)
-    {
+    memset(statusOutputBuffer, 0, OUTPUT_SIZE);
 
+    for (i = 0; i < STATUS_TYPES_NUMBER; i++) {
         // Coordinates of (255, 255) will let the server and client know that this is a status update rather than a cell update
         statusOutputBuffer[0] = 255;
         statusOutputBuffer[1] = 255;
 
-        // The status type
+        // Status type
         statusOutputBuffer[2] = i;
 
-        // I am just going to explicitly send the status big-endian so we can be consistent on the client and server
+        // Status values
         statusOutputBuffer[3] = statusValues[i] >> 24 & 0xff;
         statusOutputBuffer[4] = statusValues[i] >> 16 & 0xff;
         statusOutputBuffer[5] = statusValues[i] >> 8 & 0xff;
         statusOutputBuffer[6] = statusValues[i];
 
-        // The rest is filler so we keep consistent output size
-        for (j = 7; j < OUTPUT_SIZE; j++)
-        {
+        // Fill
+        for (j = 7; j < OUTPUT_SIZE; j++) {
             statusOutputBuffer[j] = 0;
         }
 
-        write_to_socket(statusOutputBuffer, OUTPUT_SIZE);
+        writeToSocket(statusOutputBuffer, OUTPUT_SIZE);
     }
 }
 
-// This function is used both for checking input and pausing
-static boolean web_pauseForMilliseconds(short milliseconds)
-{
-    struct timespec delay;
-    delay.tv_sec = 0;
-    delay.tv_nsec = milliseconds * 1000000L;
-
-    nanosleep(&delay, NULL);
-
-    //Poll for input data
-
+// Pause by doing a blocking poll on the socket
+static boolean web_pauseForMilliseconds(short milliseconds) {
     fd_set input;
+    struct timeval timeout;
+
     FD_ZERO(&input);
     FD_SET(rfd, &input);
 
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 0;
+    timeout.tv_sec = milliseconds / 1000;
+    timeout.tv_usec = milliseconds % 1000;
 
     return select(rfd + 1, &input, NULL, NULL, &timeout);
 }
 
-static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, boolean colorsDance)
-{
-    // because we will halt execution until we get more input, we definitely cannot have any dancing colors from the server side.
+static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, boolean colorsDance) {
+
+    unsigned char inputBuffer[MAX_INPUT_SIZE];
+    unsigned short keyCharacter;
+
+    // Because we will halt execution until we get more input, we definitely cannot have any dancing colors from the server side.
     colorsDance = false;
 
     // Send a status update of game variables we want on the client
-    if (!refresh_screen_only)
-    {
+    if (!refreshScreenOnly) {
         sendStatusUpdate();
     }
-    refresh_screen_only = 0;
+    refreshScreenOnly = 0;
 
     // Flush output buffer
-    flush_output_buffer();
+    flushOutputBuffer();
 
-    unsigned char inputBuffer[MAX_INPUT_SIZE];
+    // Block for next command
+    readFromSocket(inputBuffer, MAX_INPUT_SIZE);
 
-    read_from_socket(inputBuffer, MAX_INPUT_SIZE);
     returnEvent->eventType = inputBuffer[0];
 
-    if (!PERMIT_CLIENT_MOUSELOOK && returnEvent->eventType == MOUSE_ENTERED_CELL)
-        return;
-
-    if (returnEvent->eventType == REFRESH_SCREEN)
-    {
-
-        //Custom event type - brogue should ignore, not status update
+    if (returnEvent->eventType == REFRESH_SCREEN) {
+        // Custom event type - not a command for the brogue game
         refreshScreen();
-        //Don't send a status update if this was only a screen refresh (may be sent by observer)
-        refresh_screen_only = 1;
+        // Don't send a status update if this was only a screen refresh (may be sent by observer)
+        refreshScreenOnly = 1;
         return;
     }
 
-    if (returnEvent->eventType == KEYSTROKE)
-    {
+    if (returnEvent->eventType == KEYSTROKE) {
+        keyCharacter = inputBuffer[1] << 8 | inputBuffer[2];
 
-        unsigned short keyCharacter = inputBuffer[1] << 8 | inputBuffer[2];
+        // 13 is sent for RETURN on web, map to RETURN_KEY
+        if (keyCharacter == 13) {
+            keyCharacter = RETURN_KEY;
+        }
 
-        returnEvent->param1 = keyCharacter; //key character
+        returnEvent->param1 = keyCharacter;
         returnEvent->controlKey = inputBuffer[3];
         returnEvent->shiftKey = inputBuffer[4];
-    }
-    else // it is a mouseEvent
-    {
+    } else { // Mouse event
         fread(inputBuffer, sizeof(char), MOUSE_INPUT_SIZE, stdin);
         returnEvent->param1 = inputBuffer[1]; //x coord
         returnEvent->param2 = inputBuffer[2]; //y coord
@@ -316,33 +276,24 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     }
 }
 
-static void web_remap(const char *input_name, const char *output_name)
-{
+static void web_remap(const char *input_name, const char *output_name) {
     // Not needed
 }
 
-static boolean modifier_held(int modifier)
-{
-    // Not needed, I am passing in the modifiers directly with the event data
+static boolean web_modifierHeld(int modifier) {
+    // Not needed, modifiers past directly with the event data
     return 0;
 }
 
-static void notify_event(short eventId, int data1, int data2, const char *str1, const char *str2)
-{
+static void web_notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2) {
     unsigned char statusOutputBuffer[EVENT_SIZE];
-    char msg[100];
-
-    snprintf(msg, 100, "event: %i d1: %i d2: %i s1: %s s2: %s\n", eventId, data1, data2, str1, str2);
-    write_to_log(msg);
 
     // Coordinates of (254, 254) will let the server and client know that this is a event notification update rather than a cell update
     statusOutputBuffer[0] = 254;
     statusOutputBuffer[1] = 254;
 
-    // The event id
     statusOutputBuffer[2] = eventId;
 
-    // I am just going to explicitly send the status big-endian so we can be consistent on the client and server
     statusOutputBuffer[3] = data1 >> 24 & 0xff;
     statusOutputBuffer[4] = data1 >> 16 & 0xff;
     statusOutputBuffer[5] = data1 >> 8 & 0xff;
@@ -360,33 +311,15 @@ static void notify_event(short eventId, int data1, int data2, const char *str1, 
     statusOutputBuffer[17] = rogue.seed >> 8 & 0xff;
     statusOutputBuffer[18] = rogue.seed;
 
-    // Copy str1 (death message)
-
-    int j;
-    int msg1_start = 19;
-    int msg1_end = 70;
-    for (j = msg1_start; j < msg1_end; j++)
-    {
-        statusOutputBuffer[j] = str1[j - msg1_start];
-        if (!str1[j - msg1_start])
-            break;
-    }
-    if (j == msg1_end)
-    {
-        statusOutputBuffer[msg1_end - 1] = 0;
-    }
-
-    int msg2_end = EVENT_SIZE;
-    for (j = msg1_end; j < msg2_end; j++)
-    {
-        statusOutputBuffer[j] = str2[j - msg1_end];
-        if (!str2[j - msg1_end])
-            break;
-    }
+    // str1 is the death / victory message
+    memcpy(statusOutputBuffer + EVENT_MESSAGE1_START, str1, EVENT_MESSAGE1_SIZE);
+    statusOutputBuffer[EVENT_MESSAGE2_START - 1] = 0;
+    // str2 is unused
+    memcpy(statusOutputBuffer + EVENT_MESSAGE1_START + EVENT_MESSAGE1_SIZE, str2, EVENT_MESSAGE2_SIZE);
     statusOutputBuffer[EVENT_SIZE - 1] = 0;
 
-    write_to_socket(statusOutputBuffer, EVENT_SIZE);
-    flush_output_buffer();
+    writeToSocket(statusOutputBuffer, EVENT_SIZE);
+    flushOutputBuffer();
 }
 
 struct brogueConsole webConsole = {
@@ -395,8 +328,8 @@ struct brogueConsole webConsole = {
     web_nextKeyOrMouseEvent,
     web_plotChar,
     web_remap,
-    modifier_held,
-    notify_event
+    web_modifierHeld,
+    web_notifyEvent
 };
 
 #endif
