@@ -53,7 +53,7 @@ static int refreshScreenOnly = 0;
 static void gameLoop();
 static void openLogfile();
 static void closeLogfile();
-static void writeToLog (const char *msg);
+static void writeToLog(const char *msg);
 static void setupSockets();
 static int readFromSocket(unsigned char *buf, int size);
 static void writeToSocket(unsigned char *buf, int size);
@@ -61,7 +61,7 @@ static void flushOutputBuffer();
 
 static void gameLoop() {
     openLogfile();
-    writeToLog ("Logfile started\n");
+    writeToLog("Logfile started\n");
 
     setupSockets();
 
@@ -221,7 +221,7 @@ static boolean web_pauseForMilliseconds(short milliseconds) {
     FD_SET(rfd, &input);
 
     timeout.tv_sec = milliseconds / 1000;
-    timeout.tv_usec = milliseconds % 1000;
+    timeout.tv_usec = (milliseconds % 1000) * 1000;
 
     return select(rfd + 1, &input, NULL, NULL, &timeout);
 }

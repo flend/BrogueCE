@@ -11,8 +11,6 @@ int brogueFontSize = 0;
 char dataDirectory[BROGUE_FILENAME_MAX] = STRINGIFY(DATADIR);
 boolean serverMode = false;
 
-void dumpScores();
-
 static boolean endswith(const char *str, const char *ending)
 {
     int str_len = strlen(str), ending_len = strlen(ending);
