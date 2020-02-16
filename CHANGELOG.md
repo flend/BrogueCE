@@ -20,6 +20,11 @@ Bug fixes
   Fixed a playback out-of-sync error when walking into a secret door to
   discover it
 -
+  The game pauses and requires a keystroke on health and poison warnings.
+  Can be disabled
+-
+  The sidebar now displays whether a monster is carrying an item
+-
   Fixed a bug where inspecting an out-of-sight lumenstone would say "you
   remember seeing a lumenstone from depth 0" instead of the depth it was found
   at
