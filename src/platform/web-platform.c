@@ -29,6 +29,7 @@
 
 //Custom events
 #define REFRESH_SCREEN 50
+#define QUERY_GRAPHICS 51
 
 enum StatusTypes
 {
@@ -46,7 +47,7 @@ static int wfd, rfd;
 static FILE *logfile;
 static unsigned char outputBuffer[OUTPUT_BUFFER_SIZE];
 static int outputBufferPos = 0;
-static int refreshScreenOnly = 0;
+static boolean showGraphics = false;
 
 static void gameLoop();
 static void openLogfile();
@@ -231,10 +232,7 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     colorsDance = false;
 
     // Send a status update of game variables we want on the client
-    if (!refreshScreenOnly) {
-        sendStatusUpdate();
-    }
-    refreshScreenOnly = 0;
+    sendStatusUpdate();
 
     // Flush output buffer
     flushOutputBuffer();
@@ -247,8 +245,12 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     if (returnEvent->eventType == REFRESH_SCREEN) {
         // Custom event type - not a command for the brogue game
         refreshScreen();
-        // Don't send a status update if this was only a screen refresh (may be sent by observer)
-        refreshScreenOnly = 1;
+        return;
+    }
+
+    if (returnEvent->eventType == QUERY_GRAPHICS) {
+        // Custom event type - not a command for the brogue game
+        notifyEvent(SWITCH_TO_GRAPHICS, showGraphics, 0, NULL, NULL);
         return;
     }
 
@@ -318,6 +320,12 @@ static void web_notifyEvent(short eventId, int data1, int data2, const char *str
     flushOutputBuffer();
 }
 
+static boolean web_setGraphicsEnabled(boolean state) {
+    showGraphics = state;
+    notifyEvent(SWITCH_TO_GRAPHICS, state, 0, NULL, NULL);
+    return state;
+}
+
 struct brogueConsole webConsole = {
     gameLoop,
     web_pauseForMilliseconds,
@@ -327,5 +335,5 @@ struct brogueConsole webConsole = {
     web_modifierHeld,
     web_notifyEvent,
     NULL,
-    NULL
+    web_setGraphicsEnabled
 };
