@@ -136,6 +136,7 @@ static void writeToSocket(unsigned char *buf, int size)
 }
 
 // Map characters which are missing or rendered as emoji on some platforms
+/*
 static unsigned int fixUnicode(unsigned int code) {
     switch (code) {
         case U_ARIES: return 0x03C8;
@@ -145,20 +146,20 @@ static unsigned int fixUnicode(unsigned int code) {
         default: return code;
     }
 }
-
+*/
 static void web_plotChar(enum displayGlyph inputChar,
                          short xLoc, short yLoc,
                          short foreRed, short foreGreen, short foreBlue,
                          short backRed, short backGreen, short backBlue) {
     unsigned char outputBuffer[OUTPUT_SIZE];
     unsigned char firstCharByte, secondCharByte;
-    enum displayGlyph translatedChar;
+    //enum displayGlyph translatedChar;
 
-    translatedChar = glyphToUnicode(inputChar);
-    translatedChar = fixUnicode(inputChar);
+    //translatedChar = glyphToUnicode(inputChar);
+    //translatedChar = fixUnicode(inputChar);
 
-    firstCharByte = translatedChar >> 8 & 0xff;
-    secondCharByte = translatedChar;
+    firstCharByte = inputChar >> 8 & 0xff;
+    secondCharByte = inputChar;
 
     outputBuffer[0] = (unsigned char)xLoc;
     outputBuffer[1] = (unsigned char)yLoc;
