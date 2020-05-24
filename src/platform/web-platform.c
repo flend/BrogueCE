@@ -72,6 +72,7 @@ static void setupPlatform() {
 }
 
 static void closePlatform() {
+    writeToLog("Logfile closed\n");
     closeLogfile();
 }
 
@@ -264,7 +265,7 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
 
     if (returnEvent->eventType == QUERY_GRAPHICS) {
         // Custom event type - not a command for the brogue game
-        notifyEvent(SWITCH_TO_GRAPHICS, showGraphics, 0, NULL, NULL);
+        notifyEvent(SWITCH_TO_GRAPHICS, showGraphics, 0, "", "");
         return;
     }
 
