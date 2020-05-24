@@ -48,7 +48,10 @@ static FILE *logfile;
 static unsigned char outputBuffer[OUTPUT_BUFFER_SIZE];
 static int outputBufferPos = 0;
 static boolean showGraphics = false;
+static boolean platformSetup = false;
 
+static void setupPlatform();
+static void closePlatform();
 static void gameLoop();
 static void openLogfile();
 static void closeLogfile();
@@ -58,15 +61,25 @@ static int readFromSocket(unsigned char *buf, int size);
 static void writeToSocket(unsigned char *buf, int size);
 static void flushOutputBuffer();
 
-static void gameLoop() {
+static void setupPlatform() {
+    if (platformSetup) {
+        return;
+    }
     openLogfile();
     writeToLog("Logfile started\n");
-
     setupSockets();
+    platformSetup = true;
+}
 
-    rogueMain();
-
+static void closePlatform() {
     closeLogfile();
+}
+
+static void gameLoop() {
+    
+    setupPlatform();
+    rogueMain();
+    closePlatform();
 }
 
 static void openLogfile() {
@@ -287,6 +300,9 @@ static boolean web_modifierHeld(int modifier) {
 static void web_notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2) {
     unsigned char statusOutputBuffer[EVENT_SIZE];
 
+    //web_setGraphicsEnabled is now called before the main game loop, so need to initalize platform if not previously initialized
+    setupPlatform();
+
     // Coordinates of (254, 254) will let the server and client know that this is a event notification update rather than a cell update
     statusOutputBuffer[0] = 254;
     statusOutputBuffer[1] = 254;
@@ -323,7 +339,7 @@ static void web_notifyEvent(short eventId, int data1, int data2, const char *str
 
 static boolean web_setGraphicsEnabled(boolean state) {
     showGraphics = state;
-    notifyEvent(SWITCH_TO_GRAPHICS, state, 0, NULL, NULL);
+    notifyEvent(SWITCH_TO_GRAPHICS, state, 0, "", "");
     return state;
 }
 
