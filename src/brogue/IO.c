@@ -329,9 +329,9 @@ short actionMenu(short x, boolean playingBack) {
         takeActionOurselves[buttonCount] = true;
         buttonCount++;
         if (KEYBOARD_LABELS) {
-            sprintf(buttons[buttonCount].text, "  %s[: %s%s low health warnings  ", yellowColorEscape, whiteColorEscape, rogue.warningPauseMode ? "Disable" : "Enable");
+            sprintf(buttons[buttonCount].text, "  %s[: %s[%s] Low health warnings  ", yellowColorEscape, whiteColorEscape, rogue.warningPauseMode ? "X" : " ");
         } else {
-            sprintf(buttons[buttonCount].text, "  %s low health warnings  ", rogue.warningPauseMode ? "Disable" : "Enable");
+            sprintf(buttons[buttonCount].text, "  [%s] Low health warnings  ", rogue.warningPauseMode ? "X" : " ");
         }
         buttons[buttonCount].hotkey[0] = WARNING_PAUSE_KEY;
         takeActionOurselves[buttonCount] = true;
