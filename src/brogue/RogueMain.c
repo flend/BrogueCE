@@ -963,7 +963,9 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         if (rogue.playbackMode) {
             playback = rogue.playbackMode;
             rogue.playbackMode = false;
-            message("(The player quit at this point.)", true);
+            if (!nullMode) {
+                message("(The player quit at this point.)", true);
+            }
             rogue.playbackMode = playback;
         }
     } else {
@@ -981,24 +983,25 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         messageWithColor(buf, &badMessageColor, false);
         displayMoreSignWithoutWaitingForAcknowledgment();
 
-        do {
-            nextBrogueEvent(&theEvent, false, false, false);
-            if (theEvent.eventType == KEYSTROKE
-                && theEvent.param1 != ACKNOWLEDGE_KEY
-                && theEvent.param1 != ESCAPE_KEY
-                && theEvent.param1 != INVENTORY_KEY) {
+        if (!nullMode) {
+            do {
+                nextBrogueEvent(&theEvent, false, false, false);
+                if (theEvent.eventType == KEYSTROKE
+                    && theEvent.param1 != ACKNOWLEDGE_KEY
+                    && theEvent.param1 != ESCAPE_KEY
+                    && theEvent.param1 != INVENTORY_KEY) {
 
-                flashTemporaryAlert(" -- Press space or click to continue, or press 'i' to view inventory -- ", 1500);
-            } else if (theEvent.eventType == KEYSTROKE && theEvent.param1 == INVENTORY_KEY) {
-                for (theItem = packItems->nextItem; theItem != NULL; theItem = theItem->nextItem) {
-                    identify(theItem);
-                    theItem->flags &= ~ITEM_MAGIC_DETECTED;
+                    flashTemporaryAlert(" -- Press space or click to continue, or press 'i' to view inventory -- ", 1500);
+                } else if (theEvent.eventType == KEYSTROKE && theEvent.param1 == INVENTORY_KEY) {
+                    for (theItem = packItems->nextItem; theItem != NULL; theItem = theItem->nextItem) {
+                        identify(theItem);
+                        theItem->flags &= ~ITEM_MAGIC_DETECTED;
+                    }
+                    displayInventory(ALL_ITEMS, 0, 0, true, false);
                 }
-                displayInventory(ALL_ITEMS, 0, 0, true, false);
-            }
-        } while (!(theEvent.eventType == KEYSTROKE && (theEvent.param1 == ACKNOWLEDGE_KEY || theEvent.param1 == ESCAPE_KEY)
-                   || theEvent.eventType == MOUSE_UP));
-
+            } while (!(theEvent.eventType == KEYSTROKE && (theEvent.param1 == ACKNOWLEDGE_KEY || theEvent.param1 == ESCAPE_KEY)
+                    || theEvent.eventType == MOUSE_UP));
+        }
         confirmMessages();
 
         rogue.playbackMode = playback;
@@ -1109,99 +1112,101 @@ void victory(boolean superVictory) {
     // First screen - Congratulations...
     //
     deleteMessages();
-    if (superVictory) {
-        message(    "Light streams through the portal, and you are teleported out of the dungeon.", false);
-        copyDisplayBuffer(dbuf, displayBuffer);
-        funkyFade(dbuf, &superVictoryColor, 0, 240, mapToWindowX(player.xLoc), mapToWindowY(player.yLoc), false);
-        displayMoreSign();
-        printString("Congratulations; you have transcended the Dungeons of Doom!                 ", mapToWindowX(0), mapToWindowY(-1), &black, &white, 0);
-        displayMoreSign();
-        clearDisplayBuffer(dbuf);
-        deleteMessages();
-        strcpy(displayedMessage[0], "You retire in splendor, forever renowned for your remarkable triumph.     ");
-    } else {
-        message(    "You are bathed in sunlight as you throw open the heavy doors.", false);
-        copyDisplayBuffer(dbuf, displayBuffer);
-        funkyFade(dbuf, &white, 0, 240, mapToWindowX(player.xLoc), mapToWindowY(player.yLoc), false);
-        displayMoreSign();
-        printString("Congratulations; you have escaped from the Dungeons of Doom!     ", mapToWindowX(0), mapToWindowY(-1), &black, &white, 0);
-        displayMoreSign();
-        clearDisplayBuffer(dbuf);
-        deleteMessages();
-        strcpy(displayedMessage[0], "You sell your treasures and live out your days in fame and glory.");
-    }
-
-    //
-    // Second screen - Show inventory and item's value
-    //
-    printString(displayedMessage[0], mapToWindowX(0), mapToWindowY(-1), &white, &black, dbuf);
-
-    plotCharToBuffer(G_GOLD, mapToWindowX(2), mapToWindowY(1), &yellow, &black, dbuf);
-    printString("Gold", mapToWindowX(4), mapToWindowY(1), &white, &black, dbuf);
-    sprintf(buf, "%li", rogue.gold);
-    printString(buf, mapToWindowX(60), mapToWindowY(1), &itemMessageColor, &black, dbuf);
-    totalValue += rogue.gold;
-
-    for (i = 4, theItem = packItems->nextItem; theItem != NULL; theItem = theItem->nextItem) {
-        if (theItem->category & GEM) {
-            gemCount += theItem->quantity;
-        }
-        if (theItem->category == AMULET && superVictory) {
-            plotCharToBuffer(G_AMULET, mapToWindowX(2), min(ROWS-1, i + 1), &yellow, &black, dbuf);
-            printString("The Birthright of Yendor", mapToWindowX(4), min(ROWS-1, i + 1), &itemMessageColor, &black, dbuf);
-            sprintf(buf, "%li", max(0, itemValue(theItem) * 2));
-            printString(buf, mapToWindowX(60), min(ROWS-1, i + 1), &itemMessageColor, &black, dbuf);
-            totalValue += max(0, itemValue(theItem) * 2);
-            i++;
+    if (!nullMode) {
+        if (superVictory) {
+            message(    "Light streams through the portal, and you are teleported out of the dungeon.", false);
+            copyDisplayBuffer(dbuf, displayBuffer);
+            funkyFade(dbuf, &superVictoryColor, 0, 240, mapToWindowX(player.xLoc), mapToWindowY(player.yLoc), false);
+            displayMoreSign();
+            printString("Congratulations; you have transcended the Dungeons of Doom!                 ", mapToWindowX(0), mapToWindowY(-1), &black, &white, 0);
+            displayMoreSign();
+            clearDisplayBuffer(dbuf);
+            deleteMessages();
+            strcpy(displayedMessage[0], "You retire in splendor, forever renowned for your remarkable triumph.     ");
         } else {
-            identify(theItem);
-            itemName(theItem, buf, true, true, &white);
-            upperCase(buf);
+            message(    "You are bathed in sunlight as you throw open the heavy doors.", false);
+            copyDisplayBuffer(dbuf, displayBuffer);
+            funkyFade(dbuf, &white, 0, 240, mapToWindowX(player.xLoc), mapToWindowY(player.yLoc), false);
+            displayMoreSign();
+            printString("Congratulations; you have escaped from the Dungeons of Doom!     ", mapToWindowX(0), mapToWindowY(-1), &black, &white, 0);
+            displayMoreSign();
+            clearDisplayBuffer(dbuf);
+            deleteMessages();
+            strcpy(displayedMessage[0], "You sell your treasures and live out your days in fame and glory.");
+        }
 
-            plotCharToBuffer(theItem->displayChar, mapToWindowX(2), min(ROWS-1, i + 1), &yellow, &black, dbuf);
-            printString(buf, mapToWindowX(4), min(ROWS-1, i + 1), &white, &black, dbuf);
+        //
+        // Second screen - Show inventory and item's value
+        //
+        printString(displayedMessage[0], mapToWindowX(0), mapToWindowY(-1), &white, &black, dbuf);
 
-            if (itemValue(theItem) > 0) {
-                sprintf(buf, "%li", max(0, itemValue(theItem)));
-                printString(buf, mapToWindowX(60), min(ROWS-1, i + 1), &itemMessageColor, &black, dbuf);
+        plotCharToBuffer(G_GOLD, mapToWindowX(2), mapToWindowY(1), &yellow, &black, dbuf);
+        printString("Gold", mapToWindowX(4), mapToWindowY(1), &white, &black, dbuf);
+        sprintf(buf, "%li", rogue.gold);
+        printString(buf, mapToWindowX(60), mapToWindowY(1), &itemMessageColor, &black, dbuf);
+        totalValue += rogue.gold;
+
+        for (i = 4, theItem = packItems->nextItem; theItem != NULL; theItem = theItem->nextItem) {
+            if (theItem->category & GEM) {
+                gemCount += theItem->quantity;
             }
+            if (theItem->category == AMULET && superVictory) {
+                plotCharToBuffer(G_AMULET, mapToWindowX(2), min(ROWS-1, i + 1), &yellow, &black, dbuf);
+                printString("The Birthright of Yendor", mapToWindowX(4), min(ROWS-1, i + 1), &itemMessageColor, &black, dbuf);
+                sprintf(buf, "%li", max(0, itemValue(theItem) * 2));
+                printString(buf, mapToWindowX(60), min(ROWS-1, i + 1), &itemMessageColor, &black, dbuf);
+                totalValue += max(0, itemValue(theItem) * 2);
+                i++;
+            } else {
+                identify(theItem);
+                itemName(theItem, buf, true, true, &white);
+                upperCase(buf);
 
-            totalValue += max(0, itemValue(theItem));
-            i++;
+                plotCharToBuffer(theItem->displayChar, mapToWindowX(2), min(ROWS-1, i + 1), &yellow, &black, dbuf);
+                printString(buf, mapToWindowX(4), min(ROWS-1, i + 1), &white, &black, dbuf);
+
+                if (itemValue(theItem) > 0) {
+                    sprintf(buf, "%li", max(0, itemValue(theItem)));
+                    printString(buf, mapToWindowX(60), min(ROWS-1, i + 1), &itemMessageColor, &black, dbuf);
+                }
+
+                totalValue += max(0, itemValue(theItem));
+                i++;
+            }
         }
-    }
-    i++;
-    printString("TOTAL:", mapToWindowX(2), min(ROWS-1, i + 1), &lightBlue, &black, dbuf);
-    sprintf(buf, "%li", totalValue);
-    printString(buf, mapToWindowX(60), min(ROWS-1, i + 1), &lightBlue, &black, dbuf);
+        i++;
+        printString("TOTAL:", mapToWindowX(2), min(ROWS-1, i + 1), &lightBlue, &black, dbuf);
+        sprintf(buf, "%li", totalValue);
+        printString(buf, mapToWindowX(60), min(ROWS-1, i + 1), &lightBlue, &black, dbuf);
 
-    funkyFade(dbuf, &white, 0, 120, COLS/2, ROWS/2, true);
-    displayMoreSign();
+        funkyFade(dbuf, &white, 0, 120, COLS/2, ROWS/2, true);
+        displayMoreSign();
 
-    //
-    // Third screen - List of achievements with recording save prompt
-    //
-    blackOutScreen();
+        //
+        // Third screen - List of achievements with recording save prompt
+        //
+        blackOutScreen();
 
-    i = 4;
-    printString("Achievements", mapToWindowX(2), i++, &lightBlue, &black, NULL);
+        i = 4;
+        printString("Achievements", mapToWindowX(2), i++, &lightBlue, &black, NULL);
 
-    i++;
-    for (j = 0; i < ROWS && j < FEAT_COUNT; j++) {
-        if (rogue.featRecord[j]) {
-            sprintf(buf, "%s: %s", featTable[j].name, featTable[j].description);
-            printString(buf, mapToWindowX(2), i, &advancementMessageColor, &black, NULL);
-            i++;
+        i++;
+        for (j = 0; i < ROWS && j < FEAT_COUNT; j++) {
+            if (rogue.featRecord[j]) {
+                sprintf(buf, "%s: %s", featTable[j].name, featTable[j].description);
+                printString(buf, mapToWindowX(2), i, &advancementMessageColor, &black, NULL);
+                i++;
+            }
         }
-    }
 
-    strcpy(victoryVerb, superVictory ? "Mastered" : "Escaped");
-    if (gemCount == 0) {
-        sprintf(theEntry.description, "%s the Dungeons of Doom!", victoryVerb);
-    } else if (gemCount == 1) {
-        sprintf(theEntry.description, "%s the Dungeons of Doom with a lumenstone!", victoryVerb);
-    } else {
-        sprintf(theEntry.description, "%s the Dungeons of Doom with %i lumenstones!", victoryVerb, gemCount);
+        strcpy(victoryVerb, superVictory ? "Mastered" : "Escaped");
+        if (gemCount == 0) {
+            sprintf(theEntry.description, "%s the Dungeons of Doom!", victoryVerb);
+        } else if (gemCount == 1) {
+            sprintf(theEntry.description, "%s the Dungeons of Doom with a lumenstone!", victoryVerb);
+        } else {
+            sprintf(theEntry.description, "%s the Dungeons of Doom with %i lumenstones!", victoryVerb, gemCount);
+        }
     }
 
     theEntry.score = totalValue;

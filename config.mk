@@ -15,5 +15,8 @@ WEBBROGUE := YES
 # Enable debugging mode. See top of Rogue.h for features
 DEBUG := NO
 
+# Enable null (logging only) output mode
+NULL := YES
+
 # Configure the executable to run from a macOS .app bundle (only works in graphical mode)
 MAC_APP := NO

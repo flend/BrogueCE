@@ -9,6 +9,7 @@ struct brogueConsole currentConsole;
 int brogueFontSize = 0;
 char dataDirectory[BROGUE_FILENAME_MAX] = STRINGIFY(DATADIR);
 boolean serverMode = false;
+boolean nullMode = false;
 boolean hasGraphics = false;
 boolean graphicsEnabled = false;
 
@@ -44,6 +45,9 @@ static void printCommandlineHelp() {
 #ifdef BROGUE_CURSES
     "--term         -t          run in ncurses-based terminal mode\n"
 #endif
+#ifdef BROGUE_NULL
+    "--null          -l         run in null-output mode\n"
+#endif
 #ifdef WIZARD
     "--wizard       -W          run in debug mode\n"
 #endif
@@ -75,6 +79,8 @@ int main(int argc, char *argv[])
     currentConsole = sdlConsole;
 #elif BROGUE_WEB
     currentConsole = webConsole;
+#elif BROGUE_NULL
+    currentConsole = nullConsole;
 #else
     currentConsole = cursesConsole;
 #endif
@@ -190,6 +196,15 @@ int main(int argc, char *argv[])
             currentConsole = webConsole;
             rogue.nextGame = NG_NEW_GAME;
             serverMode = true;
+            continue;
+        }
+#endif
+
+#ifdef BROGUE_NULL
+        if(strcmp(argv[i], "--null") == 0 || strcmp(argv[i], "-l") == 0) {
+            currentConsole = nullConsole;
+            rogue.nextGame = NG_NEW_GAME;
+            nullMode = true;
             continue;
         }
 #endif

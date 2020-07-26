@@ -833,7 +833,12 @@ void mainBrogueJunction() {
                     initializeRogue(0); // Seed argument is ignored because we're in playback.
                     if (!rogue.gameHasEnded) {
                         startLevel(rogue.depthLevel, 1);
-                        rogue.playbackPaused = true;
+                        if (nullMode) {
+                            rogue.playbackPaused = false;
+                        }
+                        else {
+                            rogue.playbackPaused = true;
+                        }
                         displayAnnotation(); // in case there's an annotation for turn 0
                     }
 
@@ -858,7 +863,7 @@ void mainBrogueJunction() {
                 rogue.playbackMode = false;
                 rogue.playbackOOS = false;
 
-                if(serverMode) {
+                if(serverMode || nullMode) {
                     rogue.nextGame = NG_QUIT;
                 }
                 break;

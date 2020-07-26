@@ -297,20 +297,25 @@ void playbackPanic() {
         displayLevel();
         refreshSideBar(-1, -1, false);
 
-        confirmMessages();
-        message("Playback is out of sync.", false);
+        if (!nullMode) {
+            confirmMessages();
+            message("Playback is out of sync.", false);
 
-        printTextBox(OOS_APOLOGY, 0, 0, 0, &white, &black, rbuf, NULL, 0);
+            printTextBox(OOS_APOLOGY, 0, 0, 0, &white, &black, rbuf, NULL, 0);
 
-        rogue.playbackMode = false;
-        displayMoreSign();
-        rogue.playbackMode = true;
+            rogue.playbackMode = false;
+            displayMoreSign();
+            rogue.playbackMode = true;
 
-        overlayDisplayBuffer(rbuf, 0);
+            overlayDisplayBuffer(rbuf, 0);
 
-        printf("\n\nPlayback panic at location %li!", recordingLocation - 1);
+            printf("\n\nPlayback panic at location %li!", recordingLocation - 1);
 
-        overlayDisplayBuffer(rbuf, 0);
+            overlayDisplayBuffer(rbuf, 0);
+        }
+        else {
+            rogue.gameHasEnded = true;
+        }
 
         mainInputLoop();
     }
@@ -472,8 +477,10 @@ void initRecording() {
         if (strcmp(versionString, BROGUE_RECORDING_VERSION_STRING)) {
             rogue.playbackMode = false;
             rogue.playbackFastForward = false;
-            sprintf(buf, "This file is from version %s and cannot be opened in version %s.", versionString, BROGUE_RECORDING_VERSION_STRING);
-            dialogAlert(buf);
+            if (!nullMode) {
+                sprintf(buf, "This file is from version %s and cannot be opened in version %s.", versionString, BROGUE_RECORDING_VERSION_STRING);
+                dialogAlert(buf);
+            }
             rogue.playbackMode = true;
             rogue.playbackPaused = true;
             rogue.playbackFastForward = false;

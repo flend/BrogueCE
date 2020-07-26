@@ -13,6 +13,11 @@ ifeq ($(TERMINAL),YES)
 	libs += -lncurses
 endif
 
+ifeq ($(NULL),YES)
+	sources += $(addprefix src/platform/,null-platform.c)
+	cppflags += -DBROGUE_NULL
+endif
+
 ifeq ($(GRAPHICS),YES)
 	sources += $(addprefix src/platform/,sdl2-platform.c)
 	cflags += $(shell $(SDL_CONFIG) --cflags)
