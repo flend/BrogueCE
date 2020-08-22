@@ -1032,6 +1032,23 @@ static boolean glyphIsWallish(enum displayGlyph glyph) {
     }
 }
 
+static enum monsterTypes randomAnimateMonster() {
+    /* Randomly pick an animate and vulnerable monster type. Used by
+    getCellAppearance for hallucination effects. */
+    static int listLength = 0;
+    static enum monsterTypes animate[NUMBER_MONSTER_KINDS];
+
+    if (listLength == 0) {
+        for (int i=0; i < NUMBER_MONSTER_KINDS; i++) {
+            if (!(monsterCatalog[i].flags & (MONST_INANIMATE | MONST_INVULNERABLE))) {
+                animate[listLength++] = i;
+            }
+        }
+    }
+
+    return animate[rand_range(0, listLength - 1)];
+}
+
 // okay, this is kind of a beast...
 void getCellAppearance(short x, short y, enum displayGlyph *returnChar, color *returnForeColor, color *returnBackColor) {
     short bestBCPriority, bestFCPriority, bestCharPriority;
@@ -1182,11 +1199,8 @@ void getCellAppearance(short x, short y, enum displayGlyph *returnChar, color *r
                    && (!monsterIsHidden(monst, &player) || rogue.playbackOmniscience)) {
             needDistinctness = true;
             if (player.status[STATUS_HALLUCINATING] > 0 && !(monst->info.flags & (MONST_INANIMATE | MONST_INVULNERABLE)) && !rogue.playbackOmniscience) {
-                cellChar = rand_range('a', 'z');
-                if (rand_range(0, 1)) {
-                    cellChar += 'A' - 'a';
-                }
-                cellForeColor = *(monsterCatalog[rand_range(1, NUMBER_MONSTER_KINDS - 1)].foreColor);
+                cellChar = monsterCatalog[randomAnimateMonster()].displayChar;
+                cellForeColor = *(monsterCatalog[randomAnimateMonster()].foreColor);
             } else {
                 cellChar = monst->info.displayChar;
                 cellForeColor = *(monst->info.foreColor);
@@ -1195,12 +1209,10 @@ void getCellAppearance(short x, short y, enum displayGlyph *returnChar, color *r
                     //cellForeColor = cellBackColor;
                     applyColorAverage(&cellForeColor, &cellBackColor, 75);
                 } else {
-                    if (monst->creatureState == MONSTER_ALLY
-                        && (monst->info.displayChar >= 'a' && monst->info.displayChar <= 'z' || monst->info.displayChar >= 'A' && monst->info.displayChar <= 'Z')) {
+                    if (monst->creatureState == MONSTER_ALLY && !(monst->info.flags & MONST_INANIMATE)) {
                         if (rogue.trueColorMode) {
                             cellForeColor = white;
                         } else {
-                            //applyColorAverage(&cellForeColor, &blue, 50);
                             applyColorAverage(&cellForeColor, &pink, 50);
                         }
                     }
@@ -1273,7 +1285,7 @@ void getCellAppearance(short x, short y, enum displayGlyph *returnChar, color *r
                 && !monsterHiddenBySubmersion(monst, &player)) {
 
                 if (player.status[STATUS_HALLUCINATING] && !rogue.playbackOmniscience) {
-                    cellChar = monsterCatalog[rand_range(1, NUMBER_MONSTER_KINDS - 1)].displayChar;
+                    cellChar = monsterCatalog[randomAnimateMonster()].displayChar;
                 } else {
                     cellChar = monst->info.displayChar;
                 }
@@ -2513,7 +2525,19 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             autoRest();
             break;
         case SEARCH_KEY:
-            manualSearch();
+            if (controlKey) {
+                rogue.disturbed = false;
+                rogue.automationActive = true;
+                do {
+                    manualSearch();
+                    if (pauseBrogue(80)) {
+                        rogue.disturbed = true;
+                    }
+                } while (player.status[STATUS_SEARCHING] < 5 && !rogue.disturbed);
+                rogue.automationActive = false;
+            } else {
+                manualSearch();
+            }
             break;
         case INVENTORY_KEY:
             displayInventory(ALL_ITEMS, 0, 0, true, true);
@@ -3781,7 +3805,7 @@ void printHelpScreen() {
         "",
         "             z  ****rest once",
         "             Z  ****rest for 100 turns or until something happens",
-        "             s  ****search for secret doors and traps",
+        "             s  ****search for secrets (control-s: long search)",
         "          <, >  ****travel to stairs",
         "             x  ****auto-explore (control-x: fast forward)",
         "             A  ****autopilot (control-A: fast forward)",

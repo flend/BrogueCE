@@ -33,15 +33,10 @@
 #define USE_UNICODE
 
 // Brogue version: what the user sees in the menu and title
-#define BROGUE_VERSION_STRING "CE 1.8.3"
+#define BROGUE_VERSION_STRING "CE 1.9"
 // Recording version: replay/saves from a different version won't load
 // Cannot be longer than 16 chars
-#define BROGUE_RECORDING_VERSION_STRING "CE 1.8"
-
-// debug macros -- uncomment the #define WIZARD here or set DEBUG := YES in
-// config.mk to enable
-
-//#define WIZARD
+#define BROGUE_RECORDING_VERSION_STRING "CE 1.9"
 
 #define DEBUG                           if (rogue.wizard)
 #define MONSTERS_ENABLED                (!rogue.wizard || 1) // Quest room monsters can be generated regardless.
@@ -235,7 +230,7 @@ enum displayGlyph {
     G_SCROLL,
     G_RING,
     G_WEAPON,
-    G_GEM,
+    G_TURRET,
     G_TOTEM,
     G_GOOD_MAGIC,
     G_BAD_MAGIC,
@@ -258,7 +253,7 @@ enum displayGlyph {
     G_BLOODWORT_STALK,
     G_FLOOR_ALT,
     G_UNICORN,
-    G_TURRET,
+    G_GEM,
     G_WAND,
     G_GRANITE,
     G_CARPET,
@@ -2604,7 +2599,7 @@ extern "C" {
     void shuffleList(short *list, short listLength);
     void fillSequentialList(short *list, short listLength);
     fixpt fp_round(fixpt x);
-    fixpt fp_pow(fixpt base, fixpt expn);
+    fixpt fp_pow(fixpt base, int expn);
     fixpt fp_sqrt(fixpt val);
     short unflag(unsigned long flag);
     void considerCautiousMode();

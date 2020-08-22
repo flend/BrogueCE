@@ -1688,8 +1688,9 @@ boolean isVowelish(char *theChar) {
         theChar += 4;
     }
     char str[30];
-    strncpy(str, theChar, 29);
-    for (i = 0; i < 30; i++) {
+    strncpy(str, theChar, 30);
+    str[29] = '\0';
+    for (i = 0; i < 29; i++) {
         upperCase(&(str[i]));
     }
     if (stringsMatch(str, "UNI")        // Words that start with "uni" aren't treated like vowels; e.g., "a" unicorn.
@@ -3587,6 +3588,14 @@ boolean polymorph(creature *monst) {
 
     unAlly(monst); // Sorry, no cheap dragon allies.
     monst->mutationIndex = -1; // Polymorph cures mutation -- basic science.
+
+    // After polymorphing, don't "drop" any creature on death (e.g. phylactery, phoenix egg)
+    if (monst->carriedMonster) {
+        killCreature(monst->carriedMonster, true);
+        freeCreature(monst->carriedMonster);
+        monst->carriedMonster = NULL;
+    }
+
     healthFraction = monst->currentHP * 1000 / monst->info.maxHP;
     previousDamageTaken = monst->info.maxHP - monst->currentHP;
 
@@ -5145,7 +5154,6 @@ boolean moveCursor(boolean *targetConfirmed,
                     *tabKey = true;
                     break;
                 case RETURN_KEY:
-                case NUMPAD_5:
                     *targetConfirmed = true;
                     break;
                 case ESCAPE_KEY:
