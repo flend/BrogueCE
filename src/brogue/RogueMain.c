@@ -447,9 +447,8 @@ void initializeRogue(uint64_t seed) {
         identify(theItem);
         theItem = addItemToPack(theItem);
 
-        theItem = generateItem(STAFF, STAFF_ENTRANCEMENT);
-        theItem->enchant1 = 10;
-        theItem->charges = 300;
+        theItem = generateItem(RING, RING_TRANSFERENCE);
+        theItem->enchant1 = 1;
         identify(theItem);
         theItem = addItemToPack(theItem);
 
