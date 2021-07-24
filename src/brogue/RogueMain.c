@@ -453,8 +453,8 @@ void initializeRogue(uint64_t seed) {
         identify(theItem);
         theItem = addItemToPack(theItem);
 
-        theItem = generateItem(WAND, WAND_BECKONING);
-        theItem->charges = 3000;
+        theItem = generateItem(CHARM, CHARM_TELEPORTATION);
+        theItem->enchant1 = 20;
         identify(theItem);
         theItem = addItemToPack(theItem);
 

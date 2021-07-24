@@ -82,20 +82,20 @@ strings, but they are equal (rogue.patchLevel is set to 0).
 #define ITEMS_ENABLED                   (!rogue.wizard || 1)
 
 #define D_BULLET_TIME                   (rogue.wizard && 0)
-#define D_WORMHOLING                    (rogue.wizard && 1)
-#define D_IMMORTAL                      (rogue.wizard && 1)
+#define D_WORMHOLING                    (rogue.wizard && 0)
+#define D_IMMORTAL                      (rogue.wizard && 0)
 
 #define D_SAFETY_VISION                 (rogue.wizard && 0)
 #define D_SCENT_VISION                  (rogue.wizard && 0)
 #define D_DISABLE_BACKGROUND_COLORS     (rogue.wizard && 0)
 
 #define D_INSPECT_LEVELGEN              (rogue.wizard && 0)
-#define D_INSPECT_MACHINES              (rogue.wizard && 1)
+#define D_INSPECT_MACHINES              (rogue.wizard && 0)
 
 #define D_MESSAGE_ITEM_GENERATION       (rogue.wizard && 1)
 #define D_MESSAGE_MACHINE_GENERATION    (rogue.wizard && 1)
 
-#define D_ALWAYS_OMNISCENCE             (rogue.wizard && 1)
+#define D_ALWAYS_OMNISCENCE             (rogue.wizard && 0)
 
 // set to false to allow multiple loads from the same saved file:
 #define DELETE_SAVE_FILE_AFTER_LOADING  true
