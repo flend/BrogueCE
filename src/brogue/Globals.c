@@ -2406,11 +2406,12 @@ const char armorRunicNames[NUMBER_ARMOR_ENCHANT_KINDS][30] = {
     "immolation",
 };
 
-// To meter item generation (on level generation) incrementFreq must be != 0
+// To meter item generation (on level generation) incrementFreq must be != 0 for frequency biasing
+// lvlScale != 0 for thresholding
 // Note that the frequencies here will override those in the relevent itemTable for generation at level gen time
 //  { category, kind,                   initFreq,   incFreq, decFreq, gMulti,gInc,   lvlScale }
 const meteredItemGenerationTable meteredItemsGenerationTable[NUMBER_METERED_ITEMS] = {
-    { SCROLL,   SCROLL_ENCHANTING,      60,         30,     50,     4,      3,      1},
+    { SCROLL,   SCROLL_ENCHANTING,      60,         30,     50,     0,      0,      0},
     { SCROLL,   SCROLL_IDENTIFY,        0,          0,      0,      0,      0,      0},
     { SCROLL,   SCROLL_TELEPORT,        0,          0,      0,      0,      0,      0},
     { SCROLL,   SCROLL_REMOVE_CURSE,    0,          0,      0,      0,      0,      0},

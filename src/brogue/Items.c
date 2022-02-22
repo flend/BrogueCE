@@ -653,7 +653,7 @@ void populateItems(short upstairsX, short upstairsY) {
         } else {
             // Guarantee any metered items that reach generation thresholds
             for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
-                if (meteredItemsGenerationTable[j].incrementFrequency != 0 &&
+                if (meteredItemsGenerationTable[j].levelScaling != 0 &&
                     rogue.meteredItems[j].numberSpawned * meteredItemsGenerationTable[j].genMultiplier + meteredItemsGenerationTable[j].genIncrement <
                     rogue.depthLevel * meteredItemsGenerationTable[j].levelScaling + randomDepthOffset) {
                         theCategory = meteredItemsGenerationTable[j].category;
