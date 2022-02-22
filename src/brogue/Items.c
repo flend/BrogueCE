@@ -625,6 +625,8 @@ void populateItems(short upstairsX, short upstairsY) {
         theCategory = ALL_ITEMS & ~GOLD; // gold is placed separately, below, so it's not a punishment
         theKind = -1;
 
+        if (D_MESSAGE_ITEM_GENERATION) printf("\n(!)  Depth %i: item %i", rogue.depthLevel, i);
+
         // Set metered item frequency to memory
         for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
             if (meteredItemsGenerationTable[j].incrementFrequency != 0) {
