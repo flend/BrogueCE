@@ -2405,8 +2405,6 @@ const char armorRunicNames[NUMBER_ARMOR_ENCHANT_KINDS][30] = {
     "vulnerability",
     "immolation",
 };
-    rogue.strengthPotionFrequency = 40;
-    rogue.enchantScrollFrequency = 60;
 
 // To meter item generation (on level generation) incrementFreq must be != 0
 // Note that the frequencies here will override those in the relevent itemTable for generation at level gen time

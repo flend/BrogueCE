@@ -181,8 +181,8 @@ void initializeRogue(uint64_t seed) {
     levels[0].upStairsLoc.x = (DCOLS - 1) / 2 - 1;
     levels[0].upStairsLoc.y = DROWS - 2;
 
-    for (i = 0; j < NUMBER_METERED_ITEMS; j++) {
-        rogue.meteredItems[j].frequency = meteredItemsGenerationTable[i].initialFrequency;
+    for (i = 0; i < NUMBER_METERED_ITEMS; i++) {
+        rogue.meteredItems[i].frequency = meteredItemsGenerationTable[i].initialFrequency;
     }
 
     // all DF messages are eligible for display
