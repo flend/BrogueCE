@@ -84,7 +84,7 @@ strings, but they are equal (rogue.patchLevel is set to 0).
 #define D_INSPECT_LEVELGEN              (rogue.wizard && 0)
 #define D_INSPECT_MACHINES              (rogue.wizard && 0)
 
-#define D_MESSAGE_ITEM_GENERATION       (rogue.wizard && 0)
+#define D_MESSAGE_ITEM_GENERATION       (rogue.wizard && 1)
 #define D_MESSAGE_MACHINE_GENERATION    (rogue.wizard && 0)
 
 // set to false to allow multiple loads from the same saved file:
@@ -1409,6 +1409,7 @@ typedef struct meteredItemGenerationTable {
     unsigned short category;
     short kind;
     int initialFrequency;
+    int incrementFrequency;
     int decrementFrequency;
     int genMultiplier;
     int genIncrement;

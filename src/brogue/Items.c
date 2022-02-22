@@ -530,7 +530,7 @@ void populateItems(short upstairsX, short upstairsY) {
     } else {
         // Add frequency to metered items memory
         for (i = 0; i < NUMBER_METERED_ITEMS; i++) {
-            rogue.meteredItems[i].frequency += meteredItemsGenerationTable[i].initialFrequency;
+            rogue.meteredItems[i].frequency += meteredItemsGenerationTable[i].incrementFrequency;
         }
         numberOfItems = 3;
         while (rand_percent(60)) {
@@ -627,7 +627,7 @@ void populateItems(short upstairsX, short upstairsY) {
 
         // Set metered item frequency to memory
         for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
-            if (meteredItemsGenerationTable[j].initialFrequency != 0) {
+            if (meteredItemsGenerationTable[j].incrementFrequency != 0) {
                 if (j >= NUMBER_SCROLL_KINDS) {
                     potionTable[j - NUMBER_SCROLL_KINDS].frequency = rogue.meteredItems[j].frequency;
                 }
@@ -651,7 +651,7 @@ void populateItems(short upstairsX, short upstairsY) {
         } else {
             // Guarantee any metered items that reach generation thresholds
             for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
-                if (meteredItemsGenerationTable[j].initialFrequency != 0 &&
+                if (meteredItemsGenerationTable[j].incrementFrequency != 0 &&
                     rogue.meteredItems[j].numberSpawned * meteredItemsGenerationTable[j].genMultiplier + meteredItemsGenerationTable[j].genIncrement <
                     rogue.depthLevel * meteredItemsGenerationTable[j].levelScaling + randomDepthOffset) {
                         theCategory = meteredItemsGenerationTable[j].category;
@@ -684,7 +684,7 @@ void populateItems(short upstairsX, short upstairsY) {
 
         // Remove frequency from spawned metered items memory.
         for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
-            if (meteredItemsGenerationTable[j].initialFrequency != 0 && 
+            if (meteredItemsGenerationTable[j].incrementFrequency != 0 && 
                 (theItem->category & meteredItemsGenerationTable[j].category) && theItem->kind == meteredItemsGenerationTable[j].kind) {
                 if (j >= NUMBER_SCROLL_KINDS) {
                     if (D_MESSAGE_ITEM_GENERATION) printf("\n(!)  Depth %i: generated an %s potion at %i frequency", rogue.depthLevel, potionTable[j - NUMBER_SCROLL_KINDS].name, rogue.meteredItems[j].frequency);

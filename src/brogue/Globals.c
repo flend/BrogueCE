@@ -2405,41 +2405,43 @@ const char armorRunicNames[NUMBER_ARMOR_ENCHANT_KINDS][30] = {
     "vulnerability",
     "immolation",
 };
+    rogue.strengthPotionFrequency = 40;
+    rogue.enchantScrollFrequency = 60;
 
-// To meter item generation (on level generation) initFreq must be != 0
-// this will override the frequency from the relevant itemTable
-//  { category, kind,                   initFreq,   decFreq, gMulti,gInc,   lvlScale }
+// To meter item generation (on level generation) incrementFreq must be != 0
+// Note that the frequencies here will override those in the relevent itemTable for generation at level gen time
+//  { category, kind,                   initFreq,   incFreq, decFreq, gMulti,gInc,   lvlScale }
 const meteredItemGenerationTable meteredItemsGenerationTable[NUMBER_METERED_ITEMS] = {
-    { SCROLL,   SCROLL_ENCHANTING,      30,         50,    4,      3,      1},
-    { SCROLL,   SCROLL_IDENTIFY,        0,          0,     0,      0,      0},
-    { SCROLL,   SCROLL_TELEPORT,        0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_REMOVE_CURSE,    0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_RECHARGING,      0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_PROTECT_ARMOR,   0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_PROTECT_WEAPON,  0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_SANCTUARY,       0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_MAGIC_MAPPING,   0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_NEGATION,        0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_SHATTERING,      0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_DISCORD,         0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_AGGRAVATE_MONSTER,0,          0,      0,      0,      0},
-    { SCROLL,   SCROLL_SUMMON_MONSTER,  0,          0,      0,      0,      0},
-    { POTION,   POTION_LIFE,            34,         150,    4,      3,      1},
-    { POTION,   POTION_STRENGTH,        17,         50,     0,      0,      0},
-    { POTION,   POTION_TELEPATHY,       0,          0,      0,      0,      0},
-    { POTION,   POTION_LEVITATION,      0,          0,      0,      0,      0},
-    { POTION,   POTION_DETECT_MAGIC,    0,          0,      0,      0,      0},
-    { POTION,   POTION_HASTE_SELF,      0,          0,      0,      0,      0},
-    { POTION,   POTION_FIRE_IMMUNITY,   0,          0,      0,      0,      0},
-    { POTION,   POTION_INVISIBILITY,    0,          0,      0,      0,      0},
-    { POTION,   POTION_POISON,          0,          0,      0,      0,      0},
-    { POTION,   POTION_PARALYSIS,       0,          0,      0,      0,      0},
-    { POTION,   POTION_HALLUCINATION,   0,          0,      0,      0,      0},
-    { POTION,   POTION_CONFUSION,       0,          0,      0,      0,      0},
-    { POTION,   POTION_INCINERATION,    0,          0,      0,      0,      0},
-    { POTION,   POTION_DARKNESS,        0,          0,      0,      0,      0},
-    { POTION,   POTION_DESCENT,         0,          0,      0,      0,      0},
-    { POTION,   POTION_LICHEN,          0,          0,      0,      0,      0}
+    { SCROLL,   SCROLL_ENCHANTING,      60,         30,     50,     4,      3,      1},
+    { SCROLL,   SCROLL_IDENTIFY,        0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_TELEPORT,        0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_REMOVE_CURSE,    0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_RECHARGING,      0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_PROTECT_ARMOR,   0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_PROTECT_WEAPON,  0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_SANCTUARY,       0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_MAGIC_MAPPING,   0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_NEGATION,        0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_SHATTERING,      0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_DISCORD,         0,          0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_AGGRAVATE_MONSTER,0,         0,      0,      0,      0,      0},
+    { SCROLL,   SCROLL_SUMMON_MONSTER,  0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_LIFE,            0,          34,     150,    4,      3,      1},
+    { POTION,   POTION_STRENGTH,        40,         17,     50,     0,      0,      0},
+    { POTION,   POTION_TELEPATHY,       0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_LEVITATION,      0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_DETECT_MAGIC,    0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_HASTE_SELF,      0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_FIRE_IMMUNITY,   0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_INVISIBILITY,    0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_POISON,          0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_PARALYSIS,       0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_HALLUCINATION,   0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_CONFUSION,       0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_INCINERATION,    0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_DARKNESS,        0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_DESCENT,         0,          0,      0,      0,      0,      0},
+    { POTION,   POTION_LICHEN,          0,          0,      0,      0,      0,      0}
 };
 
 itemTable scrollTable[NUMBER_SCROLL_KINDS] = {
