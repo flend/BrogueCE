@@ -627,11 +627,13 @@ void populateItems(short upstairsX, short upstairsY) {
 
         // Set metered item frequency to memory
         for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
-            if (j >= NUMBER_SCROLL_KINDS) {
-                potionTable[j - NUMBER_SCROLL_KINDS].frequency = rogue.meteredItems[j].frequency;
-            }
-            else {
-                scrollTable[j].frequency = rogue.meteredItems[j].frequency;
+            if (meteredItemsGenerationTable[j].initialFrequency != 0) {
+                if (j >= NUMBER_SCROLL_KINDS) {
+                    potionTable[j - NUMBER_SCROLL_KINDS].frequency = rogue.meteredItems[j].frequency;
+                }
+                else {
+                    scrollTable[j].frequency = rogue.meteredItems[j].frequency;
+                }
             }
         }
 
@@ -681,7 +683,8 @@ void populateItems(short upstairsX, short upstairsY) {
 
         // Remove frequency from spawned metered items memory.
         for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
-            if ((theItem->category & meteredItemsGenerationTable[j].category) && theItem->kind == meteredItemsGenerationTable[j].kind) {
+            if (meteredItemsGenerationTable[j].initialFrequency != 0 && 
+                (theItem->category & meteredItemsGenerationTable[j].category) && theItem->kind == meteredItemsGenerationTable[j].kind) {
                 rogue.meteredItems[j].frequency -= meteredItemsGenerationTable[j].decrementFrequency;
                 rogue.meteredItems[j].numberSpawned++;
                 if (j >= NUMBER_SCROLL_KINDS) {

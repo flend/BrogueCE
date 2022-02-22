@@ -2406,6 +2406,8 @@ const char armorRunicNames[NUMBER_ARMOR_ENCHANT_KINDS][30] = {
     "immolation",
 };
 
+// To meter item generation (on level generation) initFreq must be != 0
+// this will override the frequency from the relevant itemTable
 //  { category, kind,                   initFreq,   decFreq, gMulti,gInc,   lvlScale }
 const meteredItemGenerationTable meteredItemsGenerationTable[NUMBER_METERED_ITEMS] = {
     { SCROLL,   SCROLL_ENCHANTING,      30,         50,    4,      3,      1},
