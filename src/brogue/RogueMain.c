@@ -181,11 +181,6 @@ void initializeRogue(uint64_t seed) {
     levels[0].upStairsLoc.x = (DCOLS - 1) / 2 - 1;
     levels[0].upStairsLoc.y = DROWS - 2;
 
-    // reset enchant and gain strength frequencies
-    rogue.lifePotionFrequency = 0;
-    rogue.strengthPotionFrequency = 40;
-    rogue.enchantScrollFrequency = 60;
-
     // all DF messages are eligible for display
     resetDFMessageEligibility();
 
@@ -317,7 +312,6 @@ void initializeRogue(uint64_t seed) {
     rogue.absoluteTurnNumber = 0;
     rogue.previousPoisonPercent = 0;
     rogue.foodSpawned = 0;
-    rogue.lifePotionsSpawned = 0;
     rogue.gold = 0;
     rogue.goldGenerated = 0;
     rogue.disturbed = false;
