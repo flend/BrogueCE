@@ -493,7 +493,7 @@ void populateItems(short upstairsX, short upstairsY) {
     short i, j, numberOfItems, numberOfGoldPiles, goldBonusProbability, x = 0, y = 0;
     unsigned long totalHeat;
     short theCategory, theKind, randomDepthOffset = 0;
-    itemTable potionTableCopy, scrollTableCopy;
+    itemTable potionTableCopy[NUMBER_POTION_KINDS], scrollTableCopy[NUMBER_SCROLL_KINDS];
 
     const int POW_GOLD[] = {
         // b^3.05, with b from 0 to 25:
@@ -516,8 +516,8 @@ void populateItems(short upstairsX, short upstairsY) {
 #endif
 
     // Store copy of potion and scroll tables, since they are modified during level item generation
-    potionTableCopy = *potionTable;
-    scrollTableCopy = *scrollTable;
+    memcpy(&scrollTableCopy, &scrollTable, sizeof(scrollTable));
+    memcpy(&potionTableCopy, &potionTable, sizeof(potionTable));
 
     if (rogue.depthLevel > AMULET_LEVEL) {
         if (rogue.depthLevel - AMULET_LEVEL - 1 >= 8) {
@@ -728,9 +728,9 @@ void populateItems(short upstairsX, short upstairsY) {
     }
 
     // Restore potion and scroll tables
-    *potionTable = potionTableCopy;
-    *scrollTable = scrollTableCopy;
-    
+    memcpy(&scrollTable, &scrollTableCopy, sizeof(scrollTableCopy));
+    memcpy(&potionTable, &potionTableCopy, sizeof(potionTableCopy));
+
     // No enchant scrolls or strength/life potions can spawn except via initial
     // item population or blueprints that create them specifically.
 
