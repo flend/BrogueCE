@@ -686,14 +686,14 @@ void populateItems(short upstairsX, short upstairsY) {
         for (j = 0; j < NUMBER_METERED_ITEMS; j++) {
             if (meteredItemsGenerationTable[j].initialFrequency != 0 && 
                 (theItem->category & meteredItemsGenerationTable[j].category) && theItem->kind == meteredItemsGenerationTable[j].kind) {
-                rogue.meteredItems[j].frequency -= meteredItemsGenerationTable[j].decrementFrequency;
-                rogue.meteredItems[j].numberSpawned++;
                 if (j >= NUMBER_SCROLL_KINDS) {
                     if (D_MESSAGE_ITEM_GENERATION) printf("\n(!)  Depth %i: generated an %s potion at %i frequency", rogue.depthLevel, potionTable[j - NUMBER_SCROLL_KINDS].name, rogue.meteredItems[j].frequency);
                 }
                 else {
                     if (D_MESSAGE_ITEM_GENERATION) printf("\n(?)  Depth %i: generated an %s scroll at %i frequency", rogue.depthLevel, scrollTable[j].name, rogue.meteredItems[j].frequency);
                 }
+                rogue.meteredItems[j].frequency -= meteredItemsGenerationTable[j].decrementFrequency;
+                rogue.meteredItems[j].numberSpawned++;
             }
         }
 
