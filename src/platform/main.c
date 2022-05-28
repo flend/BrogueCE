@@ -43,6 +43,7 @@ static void printCommandlineHelp() {
     "                           (optional csv format)\n"
     "                           prints a catalog of the first LEVELS levels of NUM\n"
     "                           seeds from seed START (defaults: 1 1000 5)\n"
+    "--data-dir DIRECTORY       specify directory containing game resources (experimental)\n"
     );
     return;
 }
@@ -92,7 +93,7 @@ int main(int argc, char *argv[])
     rogue.nextGamePath[0] = '\0';
     rogue.nextGameSeed = 0;
     rogue.wizard = false;
-    rogue.displayAggroRangeMode = false;
+    rogue.displayStealthRangeMode = false;
     rogue.trueColorMode = false;
 
     enum graphicsModes initialGraphics = TEXT_GRAPHICS;
@@ -243,7 +244,7 @@ int main(int argc, char *argv[])
 #endif
 
         if (strcmp(argv[i], "--stealth") == 0 || strcmp(argv[i], "-S") == 0) {
-            rogue.displayAggroRangeMode = true;
+            rogue.displayStealthRangeMode = true;
             continue;
         }
 
@@ -255,6 +256,13 @@ int main(int argc, char *argv[])
         if (strcmp(argv[i], "--wizard") == 0 || strcmp(argv[i], "-W") == 0) {
             rogue.wizard = true;
             continue;
+        }
+
+        if (strcmp(argv[i], "--data-dir") == 0) {
+            if (i + 1 < argc) {
+                strcpy(dataDirectory, argv[++i]);
+                continue;
+            }
         }
 
         // maybe it ends with .broguesave or .broguerec, then?

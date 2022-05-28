@@ -36,7 +36,7 @@ static void printSeedCatalogCsvLine(uint64_t seed, short depth, short quantity, 
                                     char enchantment[50], char runicName[50], char vaultNumber[10], char opensVaultNumber[10],
                                     char carriedByMonsterName[50], char allyStatusName[20], char mutationName[100]){
 
-    printf("%s,%llu,%i,%i,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", BROGUE_DUNGEON_VERSION_STRING, seed, depth, quantity, categoryName,
+    printf("%s,%llu,%i,%i,%s,%s,%s,%s,%s,%s,%s,%s,%s\n", BROGUE_DUNGEON_VERSION_STRING, (unsigned long long) seed, depth, quantity, categoryName,
            kindName, enchantment, runicName, vaultNumber, opensVaultNumber, carriedByMonsterName, allyStatusName,
            mutationName);
 }
@@ -78,16 +78,16 @@ static void printSeedCatalogItem(item *theItem, creature *theMonster, boolean is
     }
 
     // vaultNumber
-    if (pmap[theItem->xLoc][theItem->yLoc].machineNumber > 0) {
+    if (pmap[theItem->loc.x][theItem->loc.y].machineNumber > 0) {
         //not all machines are "vaults" so we need to exclude some.
-        if (pmap[theItem->xLoc][theItem->yLoc].layers[0] != ALTAR_SWITCH
-            && pmap[theItem->xLoc][theItem->yLoc].layers[0] != ALTAR_SWITCH_RETRACTING
-            && pmap[theItem->xLoc][theItem->yLoc].layers[0] != ALTAR_CAGE_RETRACTABLE
-            && pmap[theItem->xLoc][theItem->yLoc].layers[0] != ALTAR_INERT
-            && pmap[theItem->xLoc][theItem->yLoc].layers[0] != AMULET_SWITCH
-            && pmap[theItem->xLoc][theItem->yLoc].layers[0] != FLOOR) {
+        if (pmap[theItem->loc.x][theItem->loc.y].layers[0] != ALTAR_SWITCH
+            && pmap[theItem->loc.x][theItem->loc.y].layers[0] != ALTAR_SWITCH_RETRACTING
+            && pmap[theItem->loc.x][theItem->loc.y].layers[0] != ALTAR_CAGE_RETRACTABLE
+            && pmap[theItem->loc.x][theItem->loc.y].layers[0] != ALTAR_INERT
+            && pmap[theItem->loc.x][theItem->loc.y].layers[0] != AMULET_SWITCH
+            && pmap[theItem->loc.x][theItem->loc.y].layers[0] != FLOOR) {
 
-            sprintf(vaultNumber, isCsvFormat ? "%i" : " (vault %i)", pmap[theItem->xLoc][theItem->yLoc].machineNumber);
+            sprintf(vaultNumber, isCsvFormat ? "%i" : " (vault %i)", pmap[theItem->loc.x][theItem->loc.y].machineNumber);
         }
     }
 
@@ -118,7 +118,7 @@ static void printSeedCatalogMonster(creature *theMonster, boolean isCsvFormat) {
 
     if (theMonster->bookkeepingFlags & MB_CAPTIVE) {
         strcpy(categoryName,"ally");
-        if (cellHasTMFlag(theMonster->xLoc, theMonster->yLoc, TM_PROMOTES_WITH_KEY)) {
+        if (cellHasTMFlag(theMonster->loc.x, theMonster->loc.y, TM_PROMOTES_WITH_KEY)) {
             strcpy(allyStatusName, isCsvFormat ? "caged" : "A caged ");
         } else {
             strcpy(allyStatusName, isCsvFormat ? "shackled" : "A shackled ");
@@ -264,8 +264,8 @@ void printSeedCatalog(uint64_t startingSeed, uint64_t numberOfSeedsToScan, unsig
                      "Generated with %s. Dungeons unchanged since %s.\n\n"
                      "To play one of these seeds, press control-N from the title screen"
                      " and enter the seed number.\n",
-            startingSeed, startingSeed + numberOfSeedsToScan - 1, scanThroughDepth, BROGUE_VERSION_STRING,
-            BROGUE_DUNGEON_VERSION_STRING, scanThroughDepth);
+            (unsigned long long) startingSeed, (unsigned long long) startingSeed + numberOfSeedsToScan - 1, scanThroughDepth, BROGUE_VERSION_STRING,
+            BROGUE_DUNGEON_VERSION_STRING);
 
     if (isCsvFormat) {
         fprintf(stderr, "%s", message);
@@ -276,9 +276,9 @@ void printSeedCatalog(uint64_t startingSeed, uint64_t numberOfSeedsToScan, unsig
 
     for (theSeed = startingSeed; theSeed < startingSeed + numberOfSeedsToScan; theSeed++) {
         if (!isCsvFormat) {
-            printf("Seed %llu:\n", theSeed);
+            printf("Seed %llu:\n", (unsigned long long) theSeed);
         }
-        fprintf(stderr, "Scanning seed %llu...\n", theSeed);
+        fprintf(stderr, "Scanning seed %llu...\n", (unsigned long long) theSeed);
         rogue.nextGamePath[0] = '\0';
         randomNumbersGenerated = 0;
 

@@ -65,19 +65,16 @@ unsigned char compressKeystroke(long c) {
     return UNKNOWN_KEY;
 }
 
-void numberToString(unsigned long number, short numberOfBytes, unsigned char *recordTo) {
+void numberToString(uint64_t number, short numberOfBytes, unsigned char *recordTo) {
     short i;
-    unsigned long n;
+    uint64_t n;
 
     n = number;
     for (i=numberOfBytes - 1; i >= 0; i--) {
         recordTo[i] = n % 256;
         n /= 256;
     }
-    if (n > 0) {
-        printf("\nError: the number %li does not fit in %i bytes.", number, numberOfBytes);
-        brogueAssert(false);
-    }
+    brogueAssert(n == 0);
 }
 
 // numberOfBytes can't be greater than 10
@@ -280,15 +277,15 @@ long uncompressKeystroke(unsigned char c) {
     return (long)c;
 }
 
-unsigned long recallNumber(short numberOfBytes) {
+uint64_t recallNumber(short numberOfBytes) {
     short i;
-    unsigned long n;
+    uint64_t n;
 
     n = 0;
 
     for (i=0; i<numberOfBytes; i++) {
         n *= 256;
-        n += (unsigned long) recallChar();
+        n += (uint64_t) recallChar();
     }
     return n;
 }
@@ -433,7 +430,7 @@ void displayAnnotation() {
         if (!rogue.playbackFastForward) {
             refreshSideBar(-1, -1, false);
 
-            printTextBox(rogue.nextAnnotation, player.xLoc, 0, 0, &black, &white, rbuf, NULL, 0);
+            printTextBox(rogue.nextAnnotation, player.loc.x, 0, 0, &black, &white, rbuf, NULL, 0);
 
             rogue.playbackMode = false;
             displayMoreSign();
@@ -670,7 +667,7 @@ static void resetPlayback() {
     boolean omniscient, stealth, trueColors;
 
     omniscient = rogue.playbackOmniscience;
-    stealth = rogue.displayAggroRangeMode;
+    stealth = rogue.displayStealthRangeMode;
     trueColors = rogue.trueColorMode;
 
     freeEverything();
@@ -679,7 +676,7 @@ static void resetPlayback() {
     initializeRogue(0); // Seed argument is ignored because we're in playback.
 
     rogue.playbackOmniscience = omniscient;
-    rogue.displayAggroRangeMode = stealth;
+    rogue.displayStealthRangeMode = stealth;
     rogue.trueColorMode = trueColors;
 
     rogue.playbackFastForward = false;
@@ -1005,11 +1002,11 @@ boolean executePlaybackInput(rogueEvent *recordingInput) {
                                      &teal, 0);
                 }
                 return true;
-            case AGGRO_DISPLAY_KEY:
-                rogue.displayAggroRangeMode = !rogue.displayAggroRangeMode;
+            case STEALTH_RANGE_KEY:
+                rogue.displayStealthRangeMode = !rogue.displayStealthRangeMode;
                 displayLevel();
                 refreshSideBar(-1, -1, false);
-                if (rogue.displayAggroRangeMode) {
+                if (rogue.displayStealthRangeMode) {
                     messageWithColor(KEYBOARD_LABELS ? "Stealth range displayed. Press ']' again to hide." : "Stealth range displayed.",
                                      &teal, 0);
                 } else {
@@ -1166,7 +1163,7 @@ void saveGameNoPrompt() {
 }
 
 void saveGame() {
-    char filePathWithoutSuffix[BROGUE_FILENAME_MAX], filePath[BROGUE_FILENAME_MAX], defaultPath[BROGUE_FILENAME_MAX];
+    char filePathWithoutSuffix[BROGUE_FILENAME_MAX - sizeof(GAME_SUFFIX)], filePath[BROGUE_FILENAME_MAX], defaultPath[BROGUE_FILENAME_MAX];
     boolean askAgain;
 
     if (rogue.playbackMode) {
