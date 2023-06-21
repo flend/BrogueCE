@@ -706,6 +706,7 @@ void mainBrogueJunction() {
                 path[0] = '\0';
                 if (rogue.nextGamePath[0]) {
                     strcpy(path, rogue.nextGamePath);
+                    strcpy(rogue.currentGamePath, rogue.nextGamePath);
                     rogue.nextGamePath[0] = '\0';
                 } else {
                     dialogChooseFile(path, GAME_SUFFIX, "Open saved game:");
@@ -733,6 +734,7 @@ void mainBrogueJunction() {
                 path[0] = '\0';
                 if (rogue.nextGamePath[0]) {
                     strcpy(path, rogue.nextGamePath);
+                    strcpy(rogue.currentGamePath, rogue.nextGamePath);
                     rogue.nextGamePath[0] = '\0';
                 } else {
                     dialogChooseFile(path, RECORDING_SUFFIX, "View recording:");
@@ -745,7 +747,12 @@ void mainBrogueJunction() {
                     initializeRogue(0); // Seed argument is ignored because we're in playback.
                     if (!rogue.gameHasEnded) {
                         startLevel(rogue.depthLevel, 1);
-                        rogue.playbackPaused = true;
+                        if (nonInteractivePlayback) {
+                            rogue.playbackPaused = false;
+                        }
+                        else {
+                            rogue.playbackPaused = true;
+                        }
                         displayAnnotation(); // in case there's an annotation for turn 0
                     }
 
@@ -776,7 +783,7 @@ void mainBrogueJunction() {
                 rogue.playbackMode = false;
                 rogue.playbackOOS = false;
 
-                if(serverMode) {
+                if(serverMode || nonInteractivePlayback) {
                     rogue.nextGame = NG_QUIT;
                 }
                 break;

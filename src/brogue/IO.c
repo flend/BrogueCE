@@ -2937,7 +2937,7 @@ void flashTemporaryAlert(char *message, int time) {
 void waitForAcknowledgment() {
     rogueEvent theEvent;
 
-    if (rogue.autoPlayingLevel || (rogue.playbackMode && !rogue.playbackOOS)) {
+    if (rogue.autoPlayingLevel || (rogue.playbackMode && !rogue.playbackOOS) || nonInteractivePlayback) {
         return;
     }
 
