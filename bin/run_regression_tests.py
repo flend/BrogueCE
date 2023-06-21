@@ -3,7 +3,7 @@ import subprocess
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 
-def run_brogue_tests(directory, num_processes):
+def run_brogue_tests(directory, num_processes, extra_args):
     # Get the absolute path of the directory
     directory = os.path.abspath(directory)
 
@@ -15,7 +15,7 @@ def run_brogue_tests(directory, num_processes):
         # Submit the brogue command for each file
         for file in files:
             file_path = os.path.join(directory, file)
-            command = f'./brogue -vn {file_path}'
+            command = f'./brogue {extra_args} -vn {file_path}'
 
             # Use executor.submit to run the command in a separate thread
             executor.submit(run_command, command)
@@ -33,13 +33,14 @@ def main():
     # Create the argument parser
     parser = argparse.ArgumentParser(description='Brogue Test Runner')
     parser.add_argument('directory', help='Directory containing test files')
-    parser.add_argument('--num_processes', type=int, default=1, help='Number of subprocess commands to run simultaneously')
+    parser.add_argument('--num_processes', type=int, default=1, help='Number of tests to run simultaneously')
+    parser.add_argument('--extra_args', help='Extra command-line arguments to be passed to brogue (e.g. to select variant)')
     
     # Parse the command line arguments
     args = parser.parse_args()
 
     # Call the function to run the brogue tests
-    run_brogue_tests(args.directory, args.num_processes)
+    run_brogue_tests(args.directory, args.num_processes, args.extra_args)
 
 if __name__ == '__main__':
     main()
