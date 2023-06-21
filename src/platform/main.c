@@ -176,6 +176,8 @@ int main(int argc, char *argv[])
                 else {
                     printf("other brogue selected: %s", argv[i + 1]);
                 }
+                i++;
+                continue;
             }
         }
 #endif
