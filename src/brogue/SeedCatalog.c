@@ -284,6 +284,7 @@ void printSeedCatalog(uint64_t startingSeed, uint64_t numberOfSeedsToScan, unsig
         rogue.playbackBetweenTurns = false;
 
         currentFilePath[0] = '\0';
+        initializeGameSpecifics();
         initializeRogue(theSeed);
         rogue.playbackOmniscience = true;
         for (rogue.depthLevel = 1; rogue.depthLevel <= scanThroughDepth; rogue.depthLevel++) {
