@@ -388,6 +388,7 @@ void titleMenu() {
             rogue.nextGame = NG_NEW_GAME_WITH_SEED;
         } else {
             rogue.nextGame = buttonCommands[button];
+            rogue.gameExitStatus = EXIT_STATUS_SUCCESS;
         }
     }
 }
@@ -406,7 +407,7 @@ void quitImmediately() {
             saveRecordingNoPrompt(path);
         }
     }
-    exit(0);
+    exit(EXIT_STATUS_SUCCESS);
 }
 
 void dialogAlert(char *message) {

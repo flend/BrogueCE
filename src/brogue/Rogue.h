@@ -2339,6 +2339,13 @@ enum featTypes {
     FEAT_COUNT,
 };
 
+enum exitStatus {
+    EXIT_STATUS_SUCCESS,
+    EXIT_STATUS_FAILURE_RECORDING_WRONG_VERSION,
+    EXIT_STATUS_FAILURE_RECORDING_OOS,
+    EXIT_STATUS_FAILURE_SDL_ERROR
+};
+
 // these are basically global variables pertaining to the game state and player's unique variables:
 typedef struct playerCharacter {
     boolean wizard;                     // in wizard mode
@@ -2434,6 +2441,7 @@ typedef struct playerCharacter {
     unsigned long nextAnnotationTurn;   // the turn number during which to display the next annotation
     char nextAnnotation[5000];          // the next annotation
     unsigned long locationInAnnotationFile; // how far we've read in the annotations file
+    int gameExitStatus;                 // success of the action before exiting the game
 
     // metered items
     long long foodSpawned;                    // amount of nutrition units spawned so far this game
