@@ -32,12 +32,12 @@ def run_brogue_tests(directory, num_processes, extra_args):
 
         # Check if there were any failed tests
         if failed_tests:
-            print("Run failure, failed tests:")
+            print("Test run failure, failed tests:")
             for failed_test in failed_tests:
                 print(f"- {failed_test}")
             sys.exit(1)
         else:
-            print("Run successful")
+            print("Test run successful")
 
 def run_command(command):
     # Run the command using subprocess.run
@@ -45,7 +45,7 @@ def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
     # Print the command output
-    print(f"Results of {command}: {result.stdout}\n")
+    print(f"Results of {command}: {result.stdout}")
 
     # Return the exit code
     return result.returncode
