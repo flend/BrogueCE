@@ -2,6 +2,7 @@ import os
 import subprocess
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+import sys
 
 def run_brogue_tests(directory, num_processes, extra_args):
     # Get the absolute path of the directory
@@ -12,6 +13,9 @@ def run_brogue_tests(directory, num_processes, extra_args):
 
     # Create a ThreadPoolExecutor with the specified number of processes
     with ThreadPoolExecutor(max_workers=num_processes) as executor:
+        # List to store the failed tests
+        failed_tests = []
+
         # Submit the brogue command for each file
         for file in files:
             file_path = os.path.join(directory, file)
@@ -21,7 +25,19 @@ def run_brogue_tests(directory, num_processes, extra_args):
                 command = f'./brogue -vn {file_path}'
 
             # Use executor.submit to run the command in a separate thread
-            executor.submit(run_command, command)
+            future = executor.submit(run_command, command)
+            failed = future.result() != 0
+            if failed:
+                failed_tests.append(file_path)
+
+        # Check if there were any failed tests
+        if failed_tests:
+            print("Run failure, failed tests:")
+            for failed_test in failed_tests:
+                print(f"- {failed_test}")
+            sys.exit(1)
+        else:
+            print("Run successful")
 
 def run_command(command):
     # Run the command using subprocess.run
@@ -29,8 +45,10 @@ def run_command(command):
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
     # Print the command output
-    print(f"Results of {command}: {result.stdout}")
-    print('-' * 50)
+    print(f"Results of {command}: {result.stdout}\n")
+
+    # Return the exit code
+    return result.returncode
 
 def main():
     # Create the argument parser
