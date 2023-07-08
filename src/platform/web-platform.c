@@ -63,9 +63,11 @@ static void gameLoop() {
 
     setupSockets();
 
-    rogueMain();
+    int exitCode = rogueMain();
 
     closeLogfile();
+
+    exit(exitCode);
 }
 
 static void openLogfile() {

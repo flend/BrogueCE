@@ -2771,7 +2771,7 @@ extern "C" {
     boolean endswith(const char *str, const char *ending);
     void append(char *str, char *ending, int bufsize);
 
-    void rogueMain();
+    int rogueMain();
     void executeEvent(rogueEvent *theEvent);
     boolean fileExists(const char *pathname);
     boolean chooseFile(char *path, char *prompt, char *defaultName, char *suffix);
@@ -3376,7 +3376,7 @@ extern "C" {
 
     boolean dialogChooseFile(char *path, const char *suffix, const char *prompt);
     void dialogCreateItemOrMonster();
-    void quitImmediately();
+    int quitImmediately();
     void dialogAlert(char *message);
     void mainBrogueJunction();
     void printSeedCatalog(uint64_t startingSeed, uint64_t numberOfSeedsToScan, unsigned int scanThroughDepth, boolean isCsvFormat);

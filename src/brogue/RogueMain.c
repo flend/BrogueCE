@@ -26,10 +26,10 @@
 #include <time.h>
 
 
-void rogueMain() {
+int rogueMain() {
     previousGameSeed = 0;
     mainBrogueJunction();
-    exit(rogue.gameExitStatus);
+    return rogue.gameExitStatus;
 }
 
 void executeEvent(rogueEvent *theEvent) {

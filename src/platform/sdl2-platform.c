@@ -274,9 +274,11 @@ static void _gameLoop() {
 
     resizeWindow(windowWidth, windowHeight);
 
-    rogueMain();
+    int retCode = rogueMain();
 
     SDL_Quit();
+
+    exit(retCode);
 }
 
 
