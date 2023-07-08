@@ -1,8 +1,5 @@
 name: "Build"
 on:
-  pull_request:
-    branches:
-      - 'release'
   push:
     # Only run on branches
     branches:
