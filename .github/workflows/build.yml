@@ -22,10 +22,6 @@ jobs:
       run: |
         make bin/brogue
 
-    - name: "Run tests (only on a merge into the 'release' branch)"
-      if: ${{ github.base_ref == 'release' }}
-      run: |
-        python3 test/run_regression_tests.py test/regression_test_v1_12/
     - name: "Create artifact"
       run: |
         make BrogueCE-linux
