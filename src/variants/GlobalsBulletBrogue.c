@@ -838,7 +838,7 @@ const meteredItemGenerationTable meteredItemsGenerationTable_BulletBrogue[] = {
     { .category = SCROLL, .kind = SCROLL_DISCORD },
     { .category = SCROLL, .kind = SCROLL_AGGRAVATE_MONSTER },
     { .category = SCROLL, .kind = SCROLL_SUMMON_MONSTER },
-    { .category = POTION, .kind = POTION_LIFE, .initialFrequency = 0, .incrementFrequency = 34, .decrementFrequency = 150, .genMultiplier = 4, .genIncrement = 3, .levelScaling = 8 },
+    { .category = POTION, .kind = POTION_LIFE, .initialFrequency = 0, .incrementFrequency = 34, .decrementFrequency = 150, .genMultiplier = 4, .genIncrement = 3, .levelScaling = 4 },
     { .category = POTION, .kind = POTION_STRENGTH, .initialFrequency = 40, .incrementFrequency = 17, .decrementFrequency = 50, .genMultiplier = 4, .genIncrement = 3, .levelScaling = 8 },
     { .category = POTION, .kind = POTION_TELEPATHY },
     { .category = POTION, .kind = POTION_LEVITATION },
