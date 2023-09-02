@@ -401,16 +401,23 @@ static void chooseGameVariant() {
     append(textBuf, tmpBuf, TEXT_MAX_LENGTH);
     append(textBuf, "Die faster and more often in this quarter-length version of the classic game!\n\n", TEXT_MAX_LENGTH);
 
-    brogueButton buttons[2];
+    snprintf(tmpBuf, TEXT_MAX_LENGTH, "%sBullet Brogue%s\n", goldColorEscape, whiteColorEscape);
+    append(textBuf, tmpBuf, TEXT_MAX_LENGTH);
+    append(textBuf, "No time? Death wish? Bullet Brogue is for you. Not best for new players!\n\n", TEXT_MAX_LENGTH);
+
+    brogueButton buttons[3];
     cellDisplayBuffer rbuf[COLS][ROWS];
     copyDisplayBuffer(rbuf, displayBuffer);
     initializeMainMenuButton(&(buttons[0]), "  %sR%sapid Brogue     ", 'r', 'R', NG_NOTHING);
     initializeMainMenuButton(&(buttons[1]), "     %sB%srogue        ", 'b', 'B', NG_NOTHING);
-    gameVariantChoice = printTextBox(textBuf, 20, 7, 45, &white, &black, rbuf, buttons, 2);
+    initializeMainMenuButton(&(buttons[2]), "   Bu%sl%slet Brogue   ", 'l', 'L', NG_NOTHING);
+    gameVariantChoice = printTextBox(textBuf, 20, 7, 45, &white, &black, rbuf, buttons, 3);
     overlayDisplayBuffer(rbuf, NULL);
 
-    if (gameVariantChoice == 1) {
+    if (gameVariantChoice == 2) {
         gameVariant = VARIANT_BROGUE;
+    } else if (gameVariantChoice == 1) {
+        gameVariant = VARIANT_BULLET_BROGUE;
     } else if (gameVariantChoice == 0) {
         gameVariant = VARIANT_RAPID_BROGUE;
     } else {

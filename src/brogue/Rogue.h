@@ -194,6 +194,7 @@ typedef struct windowpos {
 enum gameVariant {
     VARIANT_BROGUE,
     VARIANT_RAPID_BROGUE,
+    VARIANT_BULLET_BROGUE,
     NUMBER_VARIANTS
 };
 
@@ -2368,6 +2369,7 @@ typedef struct gameConstants {
     const int machinesPerLevelSuppressionOffset;     // offset for limiting number of machines generated so far against depth
     const int machinesPerLevelIncreaseFactor;        // scale factor for increasing number of machines generated so far against depth
     const int maxLevelForBonusMachines;              // deepest level that gets bonus machine generation chance
+    const int lowestLevelForMachines;                // deepest level where machines can be generated
 
     const int playerTransferenceRatio;              // player transference heal is (enchant / gameConst->playerTransferenceRatio)
     const int onHitHallucinateDuration;             // duration of on-hit hallucination effect on player
