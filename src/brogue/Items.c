@@ -532,7 +532,7 @@ void populateItems(pos upstairs) {
 
         numberOfItems += gameConst->extraItemsPerLevel;
 
-        numberOfGoldPiles = min(5, rogue.depthLevel * gameConst->depthAccelerator / 4);
+        numberOfGoldPiles = min(5, rogue.depthLevel / 4 * gameConst->depthAccelerator);
         for (goldBonusProbability = 60;
              rand_percent(goldBonusProbability) && numberOfGoldPiles <= 10;
              goldBonusProbability -= 15) {
