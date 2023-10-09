@@ -225,6 +225,11 @@ void initializeRogue(uint64_t seed) {
     rogue.highScoreSaved = false;
     rogue.cautiousMode = false;
     rogue.milliseconds = 0;
+    rogue.warningPauseMode = true;
+
+    if (seed != 0) {
+        rogue.seededGame = true;
+    }
 
     rogue.meteredItems = calloc(gameConst->numberMeteredItems, sizeof(meteredItem));
     rogue.featRecord = calloc(gameConst->numberFeats, sizeof(boolean));
@@ -867,7 +872,7 @@ void startLevel(short oldLevelNumber, short stairDirection) {
     if (itemAtLoc(player.loc)) {
         item *theItem = itemAtLoc(player.loc);
         char msg[COLS * 3], itemDescription[COLS * 3] = "";
-        
+
         // the message pane wraps so we don't need to limit the description
         describedItemName(theItem, itemDescription, COLS * 3);
         sprintf(msg, "Below you lies %s.", itemDescription);
@@ -959,7 +964,7 @@ static void removeDeadMonstersFromList(creatureList *list) {
             removeCreature(list, decedent);
             if (decedent->leader == &player
                 && !(decedent->bookkeepingFlags & MB_DOES_NOT_RESURRECT)
-                && (!(decedent->info.flags & MONST_INANIMATE) 
+                && (!(decedent->info.flags & MONST_INANIMATE)
                     || (monsterCatalog[decedent->info.monsterID].abilityFlags & MA_ENTER_SUMMONS))
                 && (decedent->bookkeepingFlags & MB_WEAPON_AUTO_ID)
                 && !(decedent->bookkeepingFlags & MB_ADMINISTRATIVE_DEATH)) {
@@ -1222,7 +1227,7 @@ void victory(boolean superVictory) {
     unsigned long totalValue = 0;
     rogueHighScoresEntry theEntry;
     boolean qualified, isPlayback;
-    
+
     char recordingFilename[BROGUE_FILENAME_MAX] = {0};
 
     rogue.gameInProgress = false;

@@ -317,7 +317,10 @@ int main(int argc, char *argv[])
             rogue.hideSeed = true;
             continue;
         }
-
+        if (strcmp(argv[i], "--hide-seed") == 0) {
+            rogue.hideSeed = true;
+            continue;
+        }
         if (strcmp(argv[i], "--data-dir") == 0) {
             if (i + 1 < argc) {
                 strcpy(dataDirectory, argv[++i]);
