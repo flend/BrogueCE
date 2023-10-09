@@ -48,6 +48,7 @@ endif
 ifeq ($(WEBBROGUE),YES)
 sources += $(addprefix src/platform/,web-platform.c)
 cppflags += -DBROGUE_WEB
+cflags += -g
 endif
 
 ifeq ($(RAPIDBROGUE),YES)
@@ -62,7 +63,9 @@ ifeq ($(DEBUG),YES)
 cflags += -g -Og
 cppflags += -DENABLE_PLAYBACK_SWITCH
 else
+ifneq ($(WEBBROGUE),YES)
 cflags += -O2
+endif
 endif
 
 # Add user-provided flags.

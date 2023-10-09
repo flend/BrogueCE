@@ -43,6 +43,7 @@ static void printCommandlineHelp() {
     "--stealth      -S          display stealth range\n"
     "--no-effects   -E          disable color effects\n"
     "--wizard       -W          run in wizard mode, invincible with powerful items\n"
+    "--hide-seed                disable seed display in game\n"
     "[--csv] --print-seed-catalog [START NUM LEVELS]\n"
     "                           (optional csv format)\n"
     "                           prints a catalog of the first LEVELS levels of NUM\n"
@@ -291,7 +292,10 @@ int main(int argc, char *argv[])
             rogue.wizard = true;
             continue;
         }
-
+        if (strcmp(argv[i], "--hide-seed") == 0) {
+            rogue.hideSeed = true;
+            continue;
+        }
         if (strcmp(argv[i], "--data-dir") == 0) {
             if (i + 1 < argc) {
                 strcpy(dataDirectory, argv[++i]);
