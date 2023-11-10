@@ -171,8 +171,6 @@ int main(int argc, char *argv[])
                 if (!strcmp("rapid_brogue", argv[i + 1])) {
                     gameVariant = VARIANT_RAPID_BROGUE;
                 }
-                i++;
-                continue;
                 if (!strcmp("bullet_brogue", argv[i + 1])) {
                     gameVariant = VARIANT_BULLET_BROGUE;
                 }
