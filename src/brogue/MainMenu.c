@@ -414,12 +414,12 @@ static void chooseGameVariant() {
     gameVariantChoice = printTextBox(textBuf, 20, 7, 45, &white, &black, buttons, 3);
     restoreDisplayBuffer(&rbuf);
 
-    if (gameVariantChoice == 2) {
+    if (gameVariantChoice == 0) {
         gameVariant = VARIANT_BROGUE;
     } else if (gameVariantChoice == 1) {
-        gameVariant = VARIANT_BULLET_BROGUE;
-    } else if (gameVariantChoice == 0) {
         gameVariant = VARIANT_RAPID_BROGUE;
+    } else if (gameVariantChoice == 2) {
+        gameVariant = VARIANT_BULLET_BROGUE;
     } else {
         rogue.nextGame = NG_NOTHING;
     }
