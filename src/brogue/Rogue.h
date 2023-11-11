@@ -194,6 +194,7 @@ typedef struct windowpos {
 enum gameVariant {
     VARIANT_BROGUE,
     VARIANT_RAPID_BROGUE,
+    VARIANT_BULLET_BROGUE,
     NUMBER_VARIANTS
 };
 
@@ -2359,7 +2360,8 @@ typedef struct gameConstants {
     const int depthAccelerator;                     // factor for how fast depth-dependent features scale compared to usual 26-level dungeon
     const int minimumLavaLevel;                     // how deep before lava can be generated
     const int minimumBrimstoneLevel;                // how deep before brimstone can be generated
-    const int mutationsOccurAboveLevel;                // how deep before monster mutations can be generated
+    const int mutationsOccurAboveLevel;             // how deep before monster mutations can be generated
+    const int deepestLevelForMachines;              // deepest level where can machines be generated
 
     const int extraItemsPerLevel;                   // how many extra items generated per level above vanilla
     const int goldAdjustmentStartDepth;             // depth from which gold is adjusted based on generation so far
@@ -2368,6 +2370,7 @@ typedef struct gameConstants {
     const int machinesPerLevelSuppressionOffset;     // offset for limiting number of machines generated so far against depth
     const int machinesPerLevelIncreaseFactor;        // scale factor for increasing number of machines generated so far against depth
     const int maxLevelForBonusMachines;              // deepest level that gets bonus machine generation chance
+    const int lowestLevelForMachines;                // deepest level where machines can be generated
 
     const int playerTransferenceRatio;              // player transference heal is (enchant / gameConst->playerTransferenceRatio)
     const int onHitHallucinateDuration;             // duration of on-hit hallucination effect on player
@@ -2498,8 +2501,9 @@ typedef struct playerCharacter {
     int gameExitStatusCode;             // exit status code indicating if brogue exited successfully or with an error
 
     // metered items
-    long long foodSpawned;                    // amount of nutrition units spawned so far this game
+    long long foodSpawned;              // amount of nutrition units spawned so far this game
     meteredItem *meteredItems;
+    int bonusWeaponsSpawned;            // BULLET_BROGUE only
 
     // ring bonuses:
     short clairvoyance;
@@ -3342,6 +3346,7 @@ extern "C" {
     item *dropItem(item *theItem);
     itemTable *tableForItemCategory(enum itemCategory theCat);
     boolean isVowelish(char *theChar);
+    const char *getOrdinalSuffix(int number);
     short charmEffectDuration(short charmKind, short enchant);
     short charmRechargeDelay(short charmKind, short enchant);
     boolean itemIsCarried(item *theItem);

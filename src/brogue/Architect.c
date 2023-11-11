@@ -1722,7 +1722,7 @@ void addMachines() {
 
     // Add reward rooms, if any:
     machineCount = 0;
-    while (rogue.depthLevel <= gameConst->amuletLevel
+    while (rogue.depthLevel <= gameConst->deepestLevelForMachines
         && (rogue.rewardRoomsGenerated + machineCount) * gameConst->machinesPerLevelSuppressionMultiplier + gameConst->machinesPerLevelSuppressionOffset < rogue.depthLevel * gameConst->machinesPerLevelIncreaseFactor) {
         // try to build at least one every four levels on average
         machineCount++;

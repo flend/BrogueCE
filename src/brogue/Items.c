@@ -638,9 +638,15 @@ void populateItems(pos upstairs) {
             }
         } else if (rogue.depthLevel > gameConst->amuletLevel) {
             theCategory = GEM;
-        } else {
-            
-            for (int j = 0; j < gameConst->numberMeteredItems; j++) {
+        } else if (gameVariant == VARIANT_BULLET_BROGUE && rogue.depthLevel < 3 && rogue.bonusWeaponsSpawned < rogue.depthLevel) {
+            theCategory = WEAPON;
+            rogue.bonusWeaponsSpawned++;
+            if (D_MESSAGE_ITEM_GENERATION) printf("\n(!l) Depth %i: spawning bonus weapon", rogue.depthLevel);
+         } else {
+            //To preserve the ability to load RB 1.4 games, we need to create items in the same order as that codebase
+            const int j_iteration_order[] = { 14, 18, 0, 15, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
+            for (int k = 0; k < gameConst->numberMeteredItems; k++) {
+                int j = j_iteration_order[k];
                 // Create any metered items that reach generation thresholds
                 if (meteredItemsGenerationTable[j].levelScaling != 0 &&
                     rogue.meteredItems[j].numberSpawned * meteredItemsGenerationTable[j].genMultiplier + meteredItemsGenerationTable[j].genIncrement <
