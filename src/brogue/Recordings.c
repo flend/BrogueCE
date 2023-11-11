@@ -507,7 +507,9 @@ void initRecording() {
         if (getPatchVersion(versionString, &recPatch) && recPatch <= gameConst->patchVersion) {
             // Major and Minor match ours, Patch is less than or equal to ours: we are compatible.
             rogue.patchVersion = recPatch;
-        } else if (strcmp(versionString, gameConst->recordingVersionString) != 0) {
+        } 
+        /*
+        else if (strcmp(versionString, gameConst->recordingVersionString) != 0) {
             // We have neither a compatible pattern match nor an exact match: we cannot load it.
             rogue.playbackMode = false;
             rogue.playbackFastForward = false;
@@ -525,7 +527,7 @@ void initRecording() {
             rogue.playbackOOS = false;
             rogue.gameHasEnded = true;
             rogue.gameExitStatusCode = EXIT_STATUS_FAILURE_RECORDING_WRONG_VERSION;
-        }
+        }*/
 
         if (wizardMode != rogue.wizard) {
             // wizard game cannot be played in normal mode and vice versa

@@ -1016,6 +1016,7 @@ const gameConstants rapidBrogueGameConst = {
     .machinesPerLevelSuppressionOffset = 0,
     .machinesPerLevelIncreaseFactor = 3,
     .maxLevelForBonusMachines = 1,
+    .deepestLevelForMachines = AMULET_LEVEL,
 
     .extraItemsPerLevel = 4,
     .goldAdjustmentStartDepth = 3,
