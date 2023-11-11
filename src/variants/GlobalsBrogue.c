@@ -1026,7 +1026,7 @@ const gameConstants brogueGameConst = {
     .machinesPerLevelSuppressionOffset = 2,
     .machinesPerLevelIncreaseFactor = 1,
     .maxLevelForBonusMachines = 2,
-    .lowestLevelForMachines = AMULET_LEVEL,
+    .deepestLevelForMachines = AMULET_LEVEL,
 
     .extraItemsPerLevel = 0,
     .goldAdjustmentStartDepth = 6,
