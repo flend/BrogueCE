@@ -824,7 +824,7 @@ const hordeType hordeCatalog_BulletBrogue[] = {
 // .incrementFrequency must be != 0 for frequency biasing
 // .levelScaling != 0 for thresholding
 const meteredItemGenerationTable meteredItemsGenerationTable_BulletBrogue[] = {
-    { .category = SCROLL, .kind = SCROLL_ENCHANTING, .initialFrequency = 60, .incrementFrequency = 30, .decrementFrequency = 50, .genMultiplier = 8, .genIncrement = 0, .levelScaling = 4 },
+    { .category = SCROLL, .kind = SCROLL_ENCHANTING, .initialFrequency = 60, .incrementFrequency = 30, .decrementFrequency = 50, .genMultiplier = 4, .genIncrement = 0, .levelScaling = 8 },
     { .category = SCROLL, .kind = SCROLL_IDENTIFY },
     { .category = SCROLL, .kind = SCROLL_TELEPORT },
     { .category = SCROLL, .kind = SCROLL_REMOVE_CURSE },
@@ -838,8 +838,8 @@ const meteredItemGenerationTable meteredItemsGenerationTable_BulletBrogue[] = {
     { .category = SCROLL, .kind = SCROLL_DISCORD },
     { .category = SCROLL, .kind = SCROLL_AGGRAVATE_MONSTER },
     { .category = SCROLL, .kind = SCROLL_SUMMON_MONSTER },
-    { .category = POTION, .kind = POTION_LIFE, .initialFrequency = 0, .incrementFrequency = 34, .decrementFrequency = 150, .genMultiplier = 4, .genIncrement = 3, .levelScaling = 4 },
-    { .category = POTION, .kind = POTION_STRENGTH, .initialFrequency = 40, .incrementFrequency = 17, .decrementFrequency = 50, .genMultiplier = 8, .genIncrement = 3, .levelScaling = 4 },
+    { .category = POTION, .kind = POTION_LIFE, .initialFrequency = 0, .incrementFrequency = 34, .decrementFrequency = 150, .genMultiplier = 4, .genIncrement = 3, .levelScaling = 8 },
+    { .category = POTION, .kind = POTION_STRENGTH, .initialFrequency = 40, .incrementFrequency = 17, .decrementFrequency = 50, .genMultiplier = 4, .genIncrement = 3, .levelScaling = 8 },
     { .category = POTION, .kind = POTION_TELEPATHY },
     { .category = POTION, .kind = POTION_LEVITATION },
     { .category = POTION, .kind = POTION_DETECT_MAGIC, .levelGuarantee = 1, .itemNumberGuarantee = 1 },
@@ -859,7 +859,7 @@ const meteredItemGenerationTable meteredItemsGenerationTable_BulletBrogue[] = {
 // levelFeelings[0] -> AMULET_LEVEL, levelFeelings[1] -> DEEPEST_LEVEL
 levelFeeling levelFeelings_BulletBrogue[] = {
     { .message = "An alien energy permeates the area. The Amulet of Yendor must be nearby!", .color = &itemMessageColor },
-    { .message = "An overwhelming sense of peace and tranquility settles upon you... then you see monsters. Doh.", .color = &lightBlue }
+    { .message = "An overwhelming sense of peace... nah, not in this dungeon.", .color = &lightBlue }
 };
 
 itemTable potionTable_BulletBrogue[] = {
@@ -1022,6 +1022,7 @@ const gameConstants bulletBrogueGameConst = {
     .machinesPerLevelSuppressionOffset = 0,
     .machinesPerLevelIncreaseFactor = 3,
     .maxLevelForBonusMachines = 1,
+    .deepestLevelForMachines = DEEPEST_LEVEL - 1,
 
     .extraItemsPerLevel = 8,
     .goldAdjustmentStartDepth = 2,

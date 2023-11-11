@@ -638,8 +638,11 @@ void populateItems(pos upstairs) {
             }
         } else if (rogue.depthLevel > gameConst->amuletLevel) {
             theCategory = GEM;
+        } else if (gameVariant == VARIANT_BULLET_BROGUE && rogue.depthLevel < 3 && rogue.bonusWeaponsSpawned < rogue.depthLevel) {
+            theCategory = WEAPON;
+            rogue.bonusWeaponsSpawned++;
+            if (D_MESSAGE_ITEM_GENERATION) printf("\n(!l) Depth %i: spawning bonus weapon", rogue.depthLevel);
         } else {
-
             for (int j = 0; j < gameConst->numberMeteredItems; j++) {
                 // Create any metered items that reach generation thresholds
                 if (meteredItemsGenerationTable[j].levelScaling != 0 &&
