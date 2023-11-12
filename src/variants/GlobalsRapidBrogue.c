@@ -1012,6 +1012,7 @@ const gameConstants rapidBrogueGameConst = {
     .minimumLavaLevel = 2,
     .minimumBrimstoneLevel = 5,
     .mutationsOccurAboveLevel = 3,
+    .monsterOutOfDepthChance = 10,
 
     .machinesPerLevelSuppressionMultiplier = 2,
     .machinesPerLevelSuppressionOffset = 0,
