@@ -1021,6 +1021,7 @@ const gameConstants brogueGameConst = {
     .minimumLavaLevel = 4,
     .minimumBrimstoneLevel = 17,
     .mutationsOccurAboveLevel = 10,
+    .monsterOutOfDepthChance = 10,
 
     .machinesPerLevelSuppressionMultiplier = 4,
     .machinesPerLevelSuppressionOffset = 2,
