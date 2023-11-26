@@ -979,6 +979,34 @@ typedef struct machineData {
     short sCols[DCOLS];
 } machineData;
 
+machineInfo *createMachineInfo(int level, int type) {
+    machineInfo *theInfo = (machineInfo *) malloc(sizeof(machineInfo));
+    memset(theInfo, '\0', sizeof(machineInfo));
+
+    theInfo->level = level;
+    theInfo->type = type;
+    theInfo->nextMachineInfo = NULL;
+
+    return theInfo;
+}
+
+static void deleteMachineInfo(machineInfo *machineInfo) {
+    free(machineInfo);
+}
+
+void deleteAllMachineInfo(machineInfo *theChain) {
+    machineInfo *thisMachineInfo, *thisMachineInfo2;
+    for (thisMachineInfo = allMachineInfo; thisMachineInfo != NULL; thisMachineInfo = thisMachineInfo2) {
+        thisMachineInfo2 = thisMachineInfo->nextMachineInfo;
+        deleteMachineInfo(thisMachineInfo);
+    }
+}
+
+static void addMachineInfoToChain(machineInfo *theInfo, machineInfo *theChain) {
+    theInfo->nextMachineInfo = theChain->nextMachineInfo;
+    theChain->nextMachineInfo = theInfo;
+}
+
 // Returns true if the machine got built; false if it was aborted.
 // If empty array parentSpawnedItems or parentSpawnedMonsters is given, will pass those back for deletion if necessary.
 boolean buildAMachine(enum machineTypes bp,
@@ -1710,6 +1738,8 @@ boolean buildAMachine(enum machineTypes bp,
 
     freeGrid(distanceMap);
     if (D_MESSAGE_MACHINE_GENERATION) printf("\nDepth %i: Built a machine from blueprint %i:%s with an origin at (%i, %i).", rogue.depthLevel, bp, blueprintCatalog[bp].name, originX, originY);
+    machineInfo *thisMachine = createMachineInfo(rogue.depthLevel, bp);
+    addMachineInfoToChain(thisMachine, allMachineInfo);
 
     //Pass created items and monsters to parent where they will be deleted on failure to place parent machine
     if (parentSpawnedItems) {

@@ -1377,6 +1377,12 @@ typedef struct keyLocationProfile {
     boolean disposableHere;
 } keyLocationProfile;
 
+typedef struct machineInfo {
+    int type;
+    int level;
+    struct machineInfo *nextMachineInfo;
+} machineInfo;
+
 typedef struct item {
     unsigned short category;
     short kind;
@@ -2866,6 +2872,8 @@ extern "C" {
                           item *parentSpawnedItems[50],
                           creature *parentSpawnedMonsters[50]);
     void attachRooms(short **grid, const dungeonProfile *theDP, short attempts, short maxRoomCount);
+    machineInfo *createMachineInfo(int level, int type);
+    void deleteAllMachineInfo(machineInfo *theChain);
     void digDungeon(void);
     void updateMapToShore(void);
     short levelIsDisconnectedWithBlockingMap(char blockingMap[DCOLS][DROWS], boolean countRegionSize);

@@ -141,6 +141,26 @@ static void printSeedCatalogMonster(creature *theMonster, boolean isCsvFormat) {
     }
 }
 
+static void printSeedCatalogMachine(machineInfo *theInfo, boolean isCsvFormat) {
+    char categoryName[10] = "", allyStatusName[20] = "", mutationName[100] = "", theMonsterName[100] = "";
+
+    if (isCsvFormat) {
+        printSeedCatalogCsvLine(rogue.seed, rogue.depthLevel, 1, "vault", blueprintCatalog[theInfo->type].name,
+                                NO_ENCHANTMENT_STRING, NO_RUNIC_STRING, NO_VAULT_STRING, NO_OPENS_VAULT_STRING,
+                                NO_CARRIED_BY_MONSTER_STRING, NO_ALLY_STATUS_STRING, NO_MUTATION_STRING);
+    } else {
+        printf("        (a vault id %d):%s\n", theInfo->type, blueprintCatalog[theInfo->type].name);
+    }
+}
+
+static void printSeedCatalogMachines(boolean isCsvFormat) {
+    for (machineInfo *thisInfo = allMachineInfo->nextMachineInfo; thisInfo != NULL; thisInfo = thisInfo->nextMachineInfo) {
+        if (thisInfo->level == rogue.depthLevel) {
+            printSeedCatalogMachine(thisInfo, isCsvFormat);
+        }
+    }
+}
+
 static void printSeedCatalogMonsters(boolean isCsvFormat, boolean includeAll) {
     for (creatureIterator it = iterateCreatures(monsters); hasNextCreature(it);) {
         creature *theMonster = nextCreature(&it);
@@ -306,11 +326,9 @@ int printSeedCatalog(uint64_t startingSeed, uint64_t numberOfSeedsToScan, unsign
             printSeedCatalogFloorItems(isCsvFormat);
             printSeedCatalogMonsterItems(isCsvFormat);
             printSeedCatalogMonsters(isCsvFormat, false); // captives and allies only
-            if (rogue.depthLevel >= 13) { // resurrection & commutation altars can spawn starting on 13
-                printSeedCatalogAltars(isCsvFormat);
-            }
+            printSeedCatalogMachines(isCsvFormat);
+            printSeedCatalogAltars(isCsvFormat);
         }
-
         freeEverything();
     }
     return 0;
