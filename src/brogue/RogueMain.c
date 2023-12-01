@@ -327,7 +327,7 @@ void initializeRogue(uint64_t seed) {
     memset(monsterItemsHopper, '\0', sizeof(item));
     monsterItemsHopper->nextItem = NULL;
 
-    allMachineInfo = createMachineInfo(0, 0);
+    allMachineInfo = createMachineInfo(0, 0, 0);
 
     for (i = 0; i < MAX_ITEMS_IN_MONSTER_ITEMS_HOPPER; i++) {
         theItem = generateItem(ALL_ITEMS & ~FOOD, -1); // Monsters can't carry food: the food clock cannot be cheated!

@@ -1380,6 +1380,9 @@ typedef struct keyLocationProfile {
 typedef struct machineInfo {
     int type;
     int level;
+    int id;
+    // Child machines are deleted when the parent is deleted, so should only be in the childMachineInfo chain
+    struct machineInfo *childMachineInfo;
     struct machineInfo *nextMachineInfo;
 } machineInfo;
 
@@ -2867,12 +2870,16 @@ extern "C" {
     void analyzeMap(boolean calculateChokeMap);
     boolean buildAMachine(enum machineTypes bp,
                           short originX, short originY,
+                          unsigned long requiredMachineFlags);
+    boolean buildAMachineOrChildMachine(enum machineTypes bp,
+                          short originX, short originY,
                           unsigned long requiredMachineFlags,
                           item *adoptiveItem,
                           item *parentSpawnedItems[50],
-                          creature *parentSpawnedMonsters[50]);
+                          creature *parentSpawnedMonsters[50],
+                          machineInfo *thisMachineInfoChain);
     void attachRooms(short **grid, const dungeonProfile *theDP, short attempts, short maxRoomCount);
-    machineInfo *createMachineInfo(int level, int type);
+    machineInfo *createMachineInfo(int level, int id, int type);
     void deleteAllMachineInfo(machineInfo *theChain);
     void digDungeon(void);
     void updateMapToShore(void);
