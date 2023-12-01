@@ -32,7 +32,7 @@
 #define  NO_CARRIED_BY_MONSTER_STRING ""
 #define  NO_ALLY_STATUS_STRING ""
 #define  NO_MUTATION_STRING ""
-static void printSeedCatalogMachines(boolean isCsvFormat, machineInfo *theChain, boolean areChildren);
+static void printSeedCatalogMachines(boolean isCsvFormat, machineInfo *theChain, int depth);
 
 static void printSeedCatalogCsvLine(uint64_t seed, short depth, short quantity, char categoryName[50], char kindName[50],
                                     char enchantment[50], char runicName[50], char vaultNumber[10], char opensVaultNumber[10],
@@ -142,7 +142,13 @@ static void printSeedCatalogMonster(creature *theMonster, boolean isCsvFormat) {
     }
 }
 
-static void printSeedCatalogMachine(machineInfo *theInfo, boolean isCsvFormat, boolean isChild) {
+static void printDepthChevrons(int depth) {
+    for (int i = 0; i < depth; i++) {
+        printf(">");
+    }
+}
+
+static void printSeedCatalogMachine(machineInfo *theInfo, boolean isCsvFormat, int depth) {
     char categoryName[10] = "", allyStatusName[20] = "", mutationName[100] = "", theMonsterName[100] = "";
 
     if (isCsvFormat) {
@@ -150,17 +156,19 @@ static void printSeedCatalogMachine(machineInfo *theInfo, boolean isCsvFormat, b
                                 NO_ENCHANTMENT_STRING, NO_RUNIC_STRING, NO_VAULT_STRING, NO_OPENS_VAULT_STRING,
                                 NO_CARRIED_BY_MONSTER_STRING, NO_ALLY_STATUS_STRING, NO_MUTATION_STRING);
     } else {
-        printf("        %s(a %s %d type %d):%s\n", isChild ? ">" : "", isChild ? "subvault" : "vault", theInfo->id, theInfo->type, blueprintCatalog[theInfo->type].name);
+        printf("        ");
+        printDepthChevrons(depth);
+        printf("(a %s %d type %d):%s\n", depth > 0 ? "subvault" : "vault", theInfo->id, theInfo->type, blueprintCatalog[theInfo->type].name);
     }
     if (theInfo->childMachineInfo->nextMachineInfo != NULL) {
-        printSeedCatalogMachines(isCsvFormat, theInfo->childMachineInfo, true);
+        printSeedCatalogMachines(isCsvFormat, theInfo->childMachineInfo, ++depth);
     }
 }
 
-static void printSeedCatalogMachines(boolean isCsvFormat, machineInfo *theChain, boolean areChildren) {
+static void printSeedCatalogMachines(boolean isCsvFormat, machineInfo *theChain, int depth) {
     for (machineInfo *thisInfo = theChain->nextMachineInfo; thisInfo != NULL; thisInfo = thisInfo->nextMachineInfo) {
         if (thisInfo->level == rogue.depthLevel) {
-            printSeedCatalogMachine(thisInfo, isCsvFormat, areChildren);
+            printSeedCatalogMachine(thisInfo, isCsvFormat, depth);
         }
     }
 }
