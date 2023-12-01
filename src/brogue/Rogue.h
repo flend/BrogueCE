@@ -2871,13 +2871,6 @@ extern "C" {
     boolean buildAMachine(enum machineTypes bp,
                           short originX, short originY,
                           unsigned long requiredMachineFlags);
-    boolean buildAMachineOrChildMachine(enum machineTypes bp,
-                          short originX, short originY,
-                          unsigned long requiredMachineFlags,
-                          item *adoptiveItem,
-                          item *parentSpawnedItems[50],
-                          creature *parentSpawnedMonsters[50],
-                          machineInfo *thisMachineInfoChain);
     void attachRooms(short **grid, const dungeonProfile *theDP, short attempts, short maxRoomCount);
     machineInfo *createMachineInfo(int level, int id, int type);
     void deleteAllMachineInfo(machineInfo *theChain);

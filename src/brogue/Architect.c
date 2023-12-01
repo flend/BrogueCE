@@ -25,6 +25,14 @@
 #include "GlobalsBase.h"
 #include "Globals.h"
 
+static boolean buildAMachineOrChildMachine(enum machineTypes bp,
+                          short originX, short originY,
+                          unsigned long requiredMachineFlags,
+                          item *adoptiveItem,
+                          item *parentSpawnedItems[50],
+                          creature *parentSpawnedMonsters[50],
+                          machineInfo *thisMachineInfoChain);
+
 short topBlobMinX, topBlobMinY, blobWidth, blobHeight;
 
 boolean cellHasTerrainFlag(pos loc, unsigned long flagMask) {
@@ -1044,7 +1052,7 @@ boolean buildAMachine(enum machineTypes bp,
 
 // Returns true if the machine got built; false if it was aborted.
 // If empty array parentSpawnedItems or parentSpawnedMonsters is given, will pass those back for deletion if necessary.
-boolean buildAMachineOrChildMachine(enum machineTypes bp,
+static boolean buildAMachineOrChildMachine(enum machineTypes bp,
                       short originX, short originY,
                       unsigned long requiredMachineFlags,
                       item *adoptiveItem,
