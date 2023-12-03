@@ -1021,20 +1021,6 @@ static void addMachineInfoToChain(machineInfo *theInfo, machineInfo *theChain) {
     theChain->nextMachineInfo = theInfo;
 }
 
-// I can't know at the end of buildMachine if the whole machine (of which this could just be a child)
-// will be successfully generated. So I really need the calling function to document that the machine was
-// created. However, this machine could have up to n-children (presuming you can have multiple recursive rooms, which I'm not sure)#
-// If you can, this is a bit of a pain since I'll need to return a complex data structure to document the vault, a list or similar
-// which will need to be freed. If it's just parent and child I can get away with a childId = parentId = style struct
-// there is a vestible that outsources an item to a machine (but just one, that's a 3-way recurse)
-// So I think you can have a main machine, an item-adopter and a vestibal (max)
-// Nah, there is an item-adopter with a
-
-// Rooms that outsource items don't have vestibals
-// Rooms that adopt items can have vestibals
-// One vestibal can outsource items
-// Can that make a deep chain then?
-
 boolean buildAMachine(enum machineTypes bp,
                       short originX, short originY,
                       unsigned long requiredMachineFlags) {
