@@ -174,7 +174,6 @@ static short actionMenu(short x, boolean playingBack) {
     brogueButton buttons[ROWS] = {{{0}}};
     char yellowColorEscape[5] = "", whiteColorEscape[5] = "", darkGrayColorEscape[5] = "";
     short i, j, longestName = 0, buttonChosen;
-    cellDisplayBuffer dbuf[COLS][ROWS], rbuf[COLS][ROWS];
 
     encodeMessageColor(yellowColorEscape, 0, &itemMessageColor);
     encodeMessageColor(whiteColorEscape, 0, &white);
@@ -406,11 +405,13 @@ static short actionMenu(short x, boolean playingBack) {
             }
         }
 
-        clearDisplayBuffer(dbuf);
-        rectangularShading(x - 1, y, longestName + 2, buttonCount, &black, INTERFACE_OPACITY / 2, dbuf);
-        overlayDisplayBuffer(dbuf, rbuf);
+        const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+        screenDisplayBuffer dbuf;
+        clearDisplayBuffer(&dbuf);
+        rectangularShading(x - 1, y, longestName + 2, buttonCount, &black, INTERFACE_OPACITY / 2, &dbuf);
+        overlayDisplayBuffer(&dbuf);
         buttonChosen = buttonInputLoop(buttons, buttonCount, x - 1, y, longestName + 2, buttonCount, NULL);
-        overlayDisplayBuffer(rbuf, NULL);
+        restoreDisplayBuffer(&rbuf);
         if (buttonChosen == -1) {
             return -1;
         } else if (takeActionOurselves[buttonChosen]) {
@@ -434,7 +435,6 @@ static void initializeMenuButtons(buttonState *state, brogueButton buttons[5]) {
     short i, x, buttonCount;
     char goldTextEscape[MAX_MENU_BUTTON_COUNT] = "";
     char whiteTextEscape[MAX_MENU_BUTTON_COUNT] = "";
-    color tempColor;
 
     encodeMessageColor(goldTextEscape, 0, KEYBOARD_LABELS ? &yellow : &white);
     encodeMessageColor(whiteTextEscape, 0, &white);
@@ -521,20 +521,6 @@ static void initializeMenuButtons(buttonState *state, brogueButton buttons[5]) {
                           ROWS - 1,
                           COLS - mapToWindowX(0),
                           1);
-
-    for (i=0; i < 5; i++) {
-        drawButton(&(state->buttons[i]), BUTTON_NORMAL, state->rbuf);
-    }
-    for (i=0; i<COLS; i++) { // So the buttons stay (but are dimmed and desaturated) when inactive.
-        tempColor = colorFromComponents(state->rbuf[i][ROWS - 1].backColorComponents);
-        desaturate(&tempColor, 60);
-        applyColorAverage(&tempColor, &black, 50);
-        storeColorComponents(state->rbuf[i][ROWS - 1].backColorComponents, &tempColor);
-        tempColor = colorFromComponents(state->rbuf[i][ROWS - 1].foreColorComponents);
-        desaturate(&tempColor, 60);
-        applyColorAverage(&tempColor, &black, 50);
-        storeColorComponents(state->rbuf[i][ROWS - 1].foreColorComponents, &tempColor);
-    }
 }
 
 
@@ -545,7 +531,7 @@ void mainInputLoop() {
     pos path[1000];
     creature *monst;
     item *theItem;
-    cellDisplayBuffer rbuf[COLS][ROWS];
+    SavedDisplayBuffer rbuf;
 
     boolean canceled, targetConfirmed, tabKey, focusedOnMonster, focusedOnItem, focusedOnTerrain,
     playingBack, doEvent, textDisplayed;
@@ -673,7 +659,8 @@ void mainInputLoop() {
 
                     focusedOnMonster = true;
                     if (monst != &player && (!player.status[STATUS_HALLUCINATING] || rogue.playbackOmniscience || player.status[STATUS_TELEPATHIC])) {
-                        printMonsterDetails(monst, rbuf);
+                        rbuf = saveDisplayBuffer();
+                        printMonsterDetails(monst);
                         textDisplayed = true;
                     }
                 } else if (theItem != NULL && playerCanSeeOrSense(rogue.cursorLoc.x, rogue.cursorLoc.y)) {
@@ -683,7 +670,8 @@ void mainInputLoop() {
 
                     focusedOnItem = true;
                     if (!player.status[STATUS_HALLUCINATING] || rogue.playbackOmniscience) {
-                        printFloorItemDetails(theItem, rbuf);
+                        rbuf = saveDisplayBuffer();
+                        printFloorItemDetails(theItem);
                         textDisplayed = true;
                     }
                 } else if (cellHasTMFlag(rogue.cursorLoc.x, rogue.cursorLoc.y, TM_LIST_IN_SIDEBAR) && playerCanSeeOrSense(rogue.cursorLoc.x, rogue.cursorLoc.y)) {
@@ -738,7 +726,7 @@ void mainInputLoop() {
                 focusedOnItem = false;
                 focusedOnTerrain = false;
                 if (textDisplayed) {
-                    overlayDisplayBuffer(rbuf, 0); // Erase the monster info window.
+                    restoreDisplayBuffer(&rbuf); // Erase the monster info window.
                 }
                 rogue.playbackMode = playingBack;
                 refreshSideBar(-1, -1, false);
@@ -853,15 +841,15 @@ void considerCautiousMode() {
 
 // previouslyPlottedCells is only accessed by commitDraws and refreshScreen,
 // as below.
-static cellDisplayBuffer previouslyPlottedCells[COLS][ROWS];
+static screenDisplayBuffer previouslyPlottedCells;
 
 // Only cells which have changed since the previous commitDraws are actually
 // drawn.
 void commitDraws() {
     for (int j = 0; j < ROWS; j++) {
         for (int i = 0; i < COLS; i++) {
-            cellDisplayBuffer *lastPlotted = &previouslyPlottedCells[i][j];
-            cellDisplayBuffer *curr = &displayBuffer[i][j];
+            cellDisplayBuffer *lastPlotted = &previouslyPlottedCells.cells[i][j];
+            cellDisplayBuffer *curr = &displayBuffer.cells[i][j];
             boolean needsUpdate =
                 lastPlotted->character != curr->character
                 || lastPlotted->foreColorComponents[0] != curr->foreColorComponents[0]
@@ -893,7 +881,7 @@ void commitDraws() {
 void refreshScreen() {
     for (int i = 0; i < COLS; i++) {
         for (int j = 0; j < ROWS; j++) {
-            cellDisplayBuffer *curr = &displayBuffer[i][j];
+            cellDisplayBuffer *curr = &displayBuffer.cells[i][j];
             plotChar(curr->character, i, j,
                      curr->foreColorComponents[0],
                      curr->foreColorComponents[1],
@@ -904,7 +892,7 @@ void refreshScreen() {
             );
             // Remember that it was previously plotted, so that
             // commitDraws still knows when it needs updates.
-            previouslyPlottedCells[i][j] = *curr;
+            previouslyPlottedCells.cells[i][j] = *curr;
         }
     }
 }
@@ -1365,7 +1353,7 @@ void getCellAppearance(short x, short y, enum displayGlyph *returnChar, color *r
 
     // Smooth out walls: if there's a "wall-ish" tile drawn below us, just draw the wall top
     if ((cellChar == G_WALL || cellChar == G_GRANITE) && coordinatesAreInMap(x, y+1)
-        && glyphIsWallish(displayBuffer[mapToWindowX(x)][mapToWindowY(y+1)].character)) {
+        && glyphIsWallish(displayBuffer.cells[mapToWindowX(x)][mapToWindowY(y+1)].character)) {
         cellChar = G_WALL_TOP;
     }
 
@@ -1647,8 +1635,8 @@ static void blendAppearances(const color *fromForeColor, const color *fromBackCo
     }
 }
 
-void irisFadeBetweenBuffers(cellDisplayBuffer fromBuf[COLS][ROWS],
-                            cellDisplayBuffer toBuf[COLS][ROWS],
+void irisFadeBetweenBuffers(screenDisplayBuffer* fromBuf,
+                            screenDisplayBuffer* toBuf,
                             short x, short y,
                             short frameCount,
                             boolean outsideIn) {
@@ -1694,23 +1682,23 @@ void irisFadeBetweenBuffers(cellDisplayBuffer fromBuf[COLS][ROWS],
             for (j=0; j<ROWS; j++) {
                 thisCellPercent = percentBasis * 3 / 100 + completionMap[i][j];
 
-                fromBackColor = colorFromComponents(fromBuf[i][j].backColorComponents);
-                fromForeColor = colorFromComponents(fromBuf[i][j].foreColorComponents);
-                fromChar = fromBuf[i][j].character;
+                fromBackColor = colorFromComponents(fromBuf->cells[i][j].backColorComponents);
+                fromForeColor = colorFromComponents(fromBuf->cells[i][j].foreColorComponents);
+                fromChar = fromBuf->cells[i][j].character;
 
-                toBackColor = colorFromComponents(toBuf[i][j].backColorComponents);
-                toForeColor = colorFromComponents(toBuf[i][j].foreColorComponents);
-                toChar = toBuf[i][j].character;
+                toBackColor = colorFromComponents(toBuf->cells[i][j].backColorComponents);
+                toForeColor = colorFromComponents(toBuf->cells[i][j].foreColorComponents);
+                toChar = toBuf->cells[i][j].character;
 
                 blendAppearances(&fromForeColor, &fromBackColor, fromChar, &toForeColor, &toBackColor, toChar, &currentForeColor, &currentBackColor, &currentChar, clamp(thisCellPercent, 0, 100));
                 plotCharWithColor(currentChar, (windowpos){ i, j }, &currentForeColor, &currentBackColor);
             }
         }
 
-        fastForward = pauseAnimation(16);
+        fastForward = pauseAnimation(16, PAUSE_BEHAVIOR_DEFAULT);
         frame++;
     } while (frame <= frameCount && !fastForward);
-    overlayDisplayBuffer(toBuf, NULL);
+    overlayDisplayBuffer(toBuf);
 }
 
 // takes dungeon coordinates
@@ -1774,6 +1762,9 @@ void plotCharWithColor(enum displayGlyph inputChar, windowpos loc, const color *
     foreRand, backRand;
 
     brogueAssert(locIsInWindow(loc));
+    if (!locIsInWindow(loc)) {
+        return;
+    }
 
     if (rogue.gameHasEnded || rogue.playbackFastForward) {
         return;
@@ -1807,7 +1798,7 @@ void plotCharWithColor(enum displayGlyph inputChar, windowpos loc, const color *
         inputChar = ' ';
     }
 
-    cellDisplayBuffer *target = &displayBuffer[loc.window_x][loc.window_y];
+    cellDisplayBuffer *target = &displayBuffer.cells[loc.window_x][loc.window_y];
     target->character = inputChar;
     target->foreColorComponents[0] = foreRed;
     target->foreColorComponents[1] = foreGreen;
@@ -1819,7 +1810,7 @@ void plotCharWithColor(enum displayGlyph inputChar, windowpos loc, const color *
     restoreRNG;
 }
 
-void plotCharToBuffer(enum displayGlyph inputChar, windowpos loc, const color *foreColor, const color *backColor, cellDisplayBuffer dbuf[COLS][ROWS]) {
+void plotCharToBuffer(enum displayGlyph inputChar, windowpos loc, const color *foreColor, const color *backColor, screenDisplayBuffer *dbuf) {
     short oldRNG;
 
     if (!dbuf) {
@@ -1828,12 +1819,15 @@ void plotCharToBuffer(enum displayGlyph inputChar, windowpos loc, const color *f
     }
 
     brogueAssert(locIsInWindow(loc));
+    if (!locIsInWindow(loc)) {
+        return;
+    }
 
     oldRNG = rogue.RNG;
     rogue.RNG = RNG_COSMETIC;
     //assureCosmeticRNG;
 
-    cellDisplayBuffer* cell = &dbuf[loc.window_x][loc.window_y];
+    cellDisplayBuffer* cell = &dbuf->cells[loc.window_x][loc.window_y];
     cell->foreColorComponents[0] = foreColor->red + rand_range(0, foreColor->redRand) + rand_range(0, foreColor->rand);
     cell->foreColorComponents[1] = foreColor->green + rand_range(0, foreColor->greenRand) + rand_range(0, foreColor->rand);
     cell->foreColorComponents[2] = foreColor->blue + rand_range(0, foreColor->blueRand) + rand_range(0, foreColor->rand);
@@ -1910,12 +1904,13 @@ void hiliteCharGrid(char hiliteCharGrid[DCOLS][DROWS], const color *hiliteColor,
                 x = mapToWindowX(i);
                 y = mapToWindowY(j);
 
-                displayBuffer[x][y].backColorComponents[0] = clamp(displayBuffer[x][y].backColorComponents[0] + hCol.red * hiliteStrength / 100, 0, 100);
-                displayBuffer[x][y].backColorComponents[1] = clamp(displayBuffer[x][y].backColorComponents[1] + hCol.green * hiliteStrength / 100, 0, 100);
-                displayBuffer[x][y].backColorComponents[2] = clamp(displayBuffer[x][y].backColorComponents[2] + hCol.blue * hiliteStrength / 100, 0, 100);
-                displayBuffer[x][y].foreColorComponents[0] = clamp(displayBuffer[x][y].foreColorComponents[0] + hCol.red * hiliteStrength / 100, 0, 100);
-                displayBuffer[x][y].foreColorComponents[1] = clamp(displayBuffer[x][y].foreColorComponents[1] + hCol.green * hiliteStrength / 100, 0, 100);
-                displayBuffer[x][y].foreColorComponents[2] = clamp(displayBuffer[x][y].foreColorComponents[2] + hCol.blue * hiliteStrength / 100, 0, 100);
+                cellDisplayBuffer *cell = &displayBuffer.cells[x][y];
+                cell->backColorComponents[0] = clamp(cell->backColorComponents[0] + hCol.red * hiliteStrength / 100, 0, 100);
+                cell->backColorComponents[1] = clamp(cell->backColorComponents[1] + hCol.green * hiliteStrength / 100, 0, 100);
+                cell->backColorComponents[2] = clamp(cell->backColorComponents[2] + hCol.blue * hiliteStrength / 100, 0, 100);
+                cell->foreColorComponents[0] = clamp(cell->foreColorComponents[0] + hCol.red * hiliteStrength / 100, 0, 100);
+                cell->foreColorComponents[1] = clamp(cell->foreColorComponents[1] + hCol.green * hiliteStrength / 100, 0, 100);
+                cell->foreColorComponents[2] = clamp(cell->foreColorComponents[2] + hCol.blue * hiliteStrength / 100, 0, 100);
             }
         }
     }
@@ -1942,32 +1937,26 @@ void colorOverDungeon(const color *color) {
     }
 }
 
-void copyDisplayBuffer(cellDisplayBuffer toBuf[COLS][ROWS], cellDisplayBuffer fromBuf[COLS][ROWS]) {
-    short i, j;
-
-    for (i=0; i<COLS; i++) {
-        for (j=0; j<ROWS; j++) {
-            toBuf[i][j] = fromBuf[i][j];
-        }
-    }
+void copyDisplayBuffer(screenDisplayBuffer *toBuf, screenDisplayBuffer *fromBuf) {
+    *toBuf = *fromBuf;
 }
 
-void clearDisplayBuffer(cellDisplayBuffer dbuf[COLS][ROWS]) {
+void clearDisplayBuffer(screenDisplayBuffer *dbuf) {
     short i, j, k;
 
     for (i=0; i<COLS; i++) {
         for (j=0; j<ROWS; j++) {
-            dbuf[i][j].character = ' ';
+            dbuf->cells[i][j].character = ' ';
             for (k=0; k<3; k++) {
-                dbuf[i][j].foreColorComponents[k] = 0;
-                dbuf[i][j].backColorComponents[k] = 0;
+                dbuf->cells[i][j].foreColorComponents[k] = 0;
+                dbuf->cells[i][j].backColorComponents[k] = 0;
             }
-            dbuf[i][j].opacity = 0;
+            dbuf->cells[i][j].opacity = 0;
         }
     }
 }
 
-color colorFromComponents(char rgb[3]) {
+color colorFromComponents(const char rgb[3]) {
     color theColor = black;
     theColor.red    = rgb[0];
     theColor.green  = rgb[1];
@@ -1975,36 +1964,35 @@ color colorFromComponents(char rgb[3]) {
     return theColor;
 }
 
+SavedDisplayBuffer saveDisplayBuffer(void) {
+    return (SavedDisplayBuffer) { .savedScreen = displayBuffer };
+}
+void restoreDisplayBuffer(const SavedDisplayBuffer *savedBuf) {
+    displayBuffer = savedBuf->savedScreen;
+}
+
 // draws overBuf over the current display with per-cell pseudotransparency as specified in overBuf.
-// If previousBuf is not null, it gets filled with the preexisting display for reversion purposes.
-void overlayDisplayBuffer(cellDisplayBuffer overBuf[COLS][ROWS], cellDisplayBuffer previousBuf[COLS][ROWS]) {
-    short i, j;
-    color foreColor, backColor, tempColor;
-    enum displayGlyph character;
-
-    if (previousBuf) {
-        copyDisplayBuffer(previousBuf, displayBuffer);
-    }
-
-    for (i=0; i<COLS; i++) {
-        for (j=0; j<ROWS; j++) {
-
-            if (overBuf[i][j].opacity != 0) {
-                backColor = colorFromComponents(overBuf[i][j].backColorComponents);
+void overlayDisplayBuffer(const screenDisplayBuffer *overBuf) {
+    for (int i=0; i<COLS; i++) {
+        for (int j=0; j<ROWS; j++) {
+            if (overBuf->cells[i][j].opacity != 0) {
+                color foreColor, backColor, tempColor;
+                enum displayGlyph character;
+                backColor = colorFromComponents(overBuf->cells[i][j].backColorComponents);
 
                 // character and fore color:
-                if (overBuf[i][j].character == ' ') { // Blank cells in the overbuf take the character from the screen.
-                    character = displayBuffer[i][j].character;
-                    foreColor = colorFromComponents(displayBuffer[i][j].foreColorComponents);
-                    applyColorAverage(&foreColor, &backColor, overBuf[i][j].opacity);
+                if (overBuf->cells[i][j].character == ' ') { // Blank cells in the overbuf take the character from the screen.
+                    character = displayBuffer.cells[i][j].character;
+                    foreColor = colorFromComponents(displayBuffer.cells[i][j].foreColorComponents);
+                    applyColorAverage(&foreColor, &backColor, overBuf->cells[i][j].opacity);
                 } else {
-                    character = overBuf[i][j].character;
-                    foreColor = colorFromComponents(overBuf[i][j].foreColorComponents);
+                    character = overBuf->cells[i][j].character;
+                    foreColor = colorFromComponents(overBuf->cells[i][j].foreColorComponents);
                 }
 
                 // back color:
-                tempColor = colorFromComponents(displayBuffer[i][j].backColorComponents);
-                applyColorAverage(&backColor, &tempColor, 100 - overBuf[i][j].opacity);
+                tempColor = colorFromComponents(displayBuffer.cells[i][j].backColorComponents);
+                applyColorAverage(&backColor, &tempColor, 100 - overBuf->cells[i][j].opacity);
 
                 plotCharWithColor(character, (windowpos){ i, j }, &foreColor, &backColor);
             }
@@ -2046,7 +2034,7 @@ void flashForeground(short *x, short *y, const color **flashColor, short *flashS
             plotCharWithColor(displayChar[i], mapToWindow((pos){ x[i], y[i] }), &newColor, &(bColor[i]));
         }
         if (j) {
-            if (pauseAnimation(16)) {
+            if (pauseAnimation(16, PAUSE_BEHAVIOR_DEFAULT)) {
                 j = 1;
             }
         }
@@ -2065,7 +2053,7 @@ void flashCell(const color *theColor, short frames, short x, short y) {
 
     for (i=0; i<frames && !interrupted; i++) {
         colorBlendCell(x, y, theColor, 100 - 100 * i / frames);
-        interrupted = pauseAnimation(50);
+        interrupted = pauseAnimation(50, PAUSE_BEHAVIOR_DEFAULT);
     }
 
     refreshDungeonCell((pos){ x, y });
@@ -2114,7 +2102,7 @@ void colorFlash(const color *theColor, unsigned long reqTerrainFlags,
                 }
             }
         }
-        if (!fastForward && (rogue.playbackFastForward || pauseAnimation(50))) {
+        if (!fastForward && (rogue.playbackFastForward || pauseAnimation(50, PAUSE_BEHAVIOR_DEFAULT))) {
             k = frames - 1;
             fastForward = true;
         }
@@ -2124,7 +2112,7 @@ void colorFlash(const color *theColor, unsigned long reqTerrainFlags,
 #define bCurve(x)   (((x) * (x) + 11) / (10 * ((x) * (x) + 1)) - 0.1)
 
 // x and y are global coordinates, not within the playing square
-void funkyFade(cellDisplayBuffer displayBuf[COLS][ROWS], const color *colorStart,
+void funkyFade(screenDisplayBuffer *displayBuf, const color *colorStart,
                const color *colorEnd, short stepCount, short x, short y, boolean invert) {
     short i, j, n, weight;
     double x2, y2, weightGrid[COLS][ROWS][3], percentComplete;
@@ -2183,9 +2171,9 @@ void funkyFade(cellDisplayBuffer displayBuf[COLS][ROWS], const color *colorStart
 
                 backColor = black;
 
-                backColor.red = displayBuf[i][j].backColorComponents[0];
-                backColor.green = displayBuf[i][j].backColorComponents[1];
-                backColor.blue = displayBuf[i][j].backColorComponents[2];
+                backColor.red = displayBuf->cells[i][j].backColorComponents[0];
+                backColor.green = displayBuf->cells[i][j].backColorComponents[1];
+                backColor.blue = displayBuf->cells[i][j].backColorComponents[2];
 
                 foreColor = (invert ? white : black);
 
@@ -2194,11 +2182,11 @@ void funkyFade(cellDisplayBuffer displayBuf[COLS][ROWS], const color *colorStart
                     && i < mapToWindowX(strLenWithoutEscapes(displayedMessage[MESSAGE_LINES - j - 1]))) {
                     tempChar = displayedMessage[MESSAGE_LINES - j - 1][windowToMapX(i)];
                 } else {
-                    tempChar = displayBuf[i][j].character;
+                    tempChar = displayBuf->cells[i][j].character;
 
-                    foreColor.red = displayBuf[i][j].foreColorComponents[0];
-                    foreColor.green = displayBuf[i][j].foreColorComponents[1];
-                    foreColor.blue = displayBuf[i][j].foreColorComponents[2];
+                    foreColor.red = displayBuf->cells[i][j].foreColorComponents[0];
+                    foreColor.green = displayBuf->cells[i][j].foreColorComponents[1];
+                    foreColor.blue = displayBuf->cells[i][j].foreColorComponents[2];
 
                     applyColorAverage(&foreColor, &tempColor, weight);
                 }
@@ -2206,7 +2194,7 @@ void funkyFade(cellDisplayBuffer displayBuf[COLS][ROWS], const color *colorStart
                 plotCharWithColor(tempChar, (windowpos){ i, j }, &foreColor, &backColor);
             }
         }
-        if (!fastForward && pauseAnimation(16)) {
+        if (!fastForward && pauseAnimation(16, PAUSE_BEHAVIOR_DEFAULT)) {
             // drop the event - skipping the transition should only skip the transition
             rogueEvent event;
             nextKeyOrMouseEvent(&event, false, false);
@@ -2381,27 +2369,27 @@ static void exploreKey(const boolean controlKey) {
     }
 }
 
-boolean pauseBrogue(short milliseconds) {
+boolean pauseBrogue(short milliseconds, PauseBehavior behavior) {
     commitDraws();
     if (rogue.playbackMode && rogue.playbackFastForward) {
         return true;
     }
     // For long delays, let's pause in small increments so that we can immediately react to user interruptions.
     while (milliseconds > 100) {
-        if (pauseForMilliseconds(50)) return true;
+        if (pauseForMilliseconds(50, behavior)) return true;
         milliseconds -= 50;
     }
-    return pauseForMilliseconds(milliseconds);
+    return pauseForMilliseconds(milliseconds, behavior);
 }
 
 // Same as pauseBrogue, but during playback the delay scales according to playback speed.
-boolean pauseAnimation(short milliseconds) {
+boolean pauseAnimation(short milliseconds, PauseBehavior behavior) {
     if (rogue.playbackMode && !rogue.playbackPaused && milliseconds > 0) {
         double factor = rogue.playbackDelayPerTurn / (double)DEFAULT_PLAYBACK_DELAY;
         if (factor > 1.) factor = sqrt(factor); // so that animations don't slow down too much
         milliseconds = max(1, lround(milliseconds * factor));
     }
-    return pauseBrogue(milliseconds);
+    return pauseBrogue(milliseconds, behavior);
 }
 
 void nextBrogueEvent(rogueEvent *returnEvent, boolean textInput, boolean colorsDance, boolean realInputEvenInPlayback) {
@@ -2418,7 +2406,7 @@ void nextBrogueEvent(rogueEvent *returnEvent, boolean textInput, boolean colorsD
                 || rogue.playbackOOS) {
 
                 pauseDuration = (rogue.playbackPaused ? DEFAULT_PLAYBACK_DELAY : rogue.playbackDelayThisTurn);
-                if (pauseDuration && pauseBrogue(pauseDuration)) {
+                if (pauseDuration && pauseBrogue(pauseDuration, PAUSE_BEHAVIOR_DEFAULT)) {
                     // if the player did something during playback
                     nextBrogueEvent(&recordingInput, false, false, true);
                     interaction = executePlaybackInput(&recordingInput);
@@ -2551,7 +2539,7 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
                 rogue.automationActive = true;
                 do {
                     manualSearch();
-                    if (pauseAnimation(80)) {
+                    if (pauseAnimation(80, PAUSE_BEHAVIOR_DEFAULT)) {
                         rogue.disturbed = true;
                     }
                 } while (player.status[STATUS_SEARCHING] < 5 && !rogue.disturbed);
@@ -2684,8 +2672,8 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
             break;
         case SEED_KEY:
             /*DEBUG {
-                cellDisplayBuffer dbuf[COLS][ROWS];
-                copyDisplayBuffer(dbuf, displayBuffer);
+                screenDisplayBuffer dbuf;
+                copyDisplayBuffer(&dbuf, &displayBuffer);
                 funkyFade(dbuf, &white, 0, 100, mapToWindowX(player.loc.x), mapToWindowY(player.loc.y), false);
             }*/
             DEBUG displayLoops();
@@ -2745,16 +2733,18 @@ boolean getInputTextString(char *inputText,
     short charNum, i, x, y;
     char keystroke, suffix[100];
     const short textEntryBounds[TEXT_INPUT_TYPES][2] = {{' ', '~'}, {' ', '~'}, {'0', '9'}};
-    cellDisplayBuffer dbuf[COLS][ROWS], rbuf[COLS][ROWS];
+    screenDisplayBuffer dbuf;
+    SavedDisplayBuffer rbuf;
 
     // x and y mark the origin for text entry.
     if (useDialogBox) {
         x = (COLS - max(maxLength, strLenWithoutEscapes(prompt))) / 2;
         y = ROWS / 2 - 1;
-        clearDisplayBuffer(dbuf);
+        clearDisplayBuffer(&dbuf);
         rectangularShading(x - 1, y - 2, max(maxLength, strLenWithoutEscapes(prompt)) + 2,
-                           4, &interfaceBoxColor, INTERFACE_OPACITY, dbuf);
-        overlayDisplayBuffer(dbuf, rbuf);
+                           4, &interfaceBoxColor, INTERFACE_OPACITY, &dbuf);
+        rbuf = saveDisplayBuffer();
+        overlayDisplayBuffer(&dbuf);
         printString(prompt, x, y - 1, &white, &interfaceBoxColor, NULL);
         for (i=0; i<maxLength; i++) {
             plotCharWithColor(' ', (windowpos){ x + i, y }, &black, &black);
@@ -2834,7 +2824,7 @@ boolean getInputTextString(char *inputText,
     } while (keystroke != RETURN_KEY && keystroke != ESCAPE_KEY);
 
     if (useDialogBox) {
-        overlayDisplayBuffer(rbuf, NULL);
+        restoreDisplayBuffer(&rbuf);
     }
 
     inputText[charNum] = '\0';
@@ -2873,8 +2863,8 @@ void flashMessage(char *message, short x, short y, int time, const color *fColor
     fastForward = false;
 
     for (j=0; j<messageLength; j++) {
-        backColors[j] = colorFromComponents(displayBuffer[j + x][y].backColorComponents);
-        dbufs[j] = displayBuffer[j + x][y];
+        backColors[j] = colorFromComponents(displayBuffer.cells[j + x][y].backColorComponents);
+        dbufs[j] = displayBuffer.cells[j + x][y];
     }
 
     previousPercentComplete = -1;
@@ -2884,8 +2874,8 @@ void flashMessage(char *message, short x, short y, int time, const color *fColor
         if (previousPercentComplete != percentComplete) {
             for (j=0; j<messageLength; j++) {
                 if (i==0) {
-                    backColors[j] = colorFromComponents(displayBuffer[j + x][y].backColorComponents);
-                    dbufs[j] = displayBuffer[j + x][y];
+                    backColors[j] = colorFromComponents(displayBuffer.cells[j + x][y].backColorComponents);
+                    dbufs[j] = displayBuffer.cells[j + x][y];
                 }
                 backColor = backColors[j];
                 applyColorAverage(&backColor, bColor, 100 - percentComplete);
@@ -2902,7 +2892,7 @@ void flashMessage(char *message, short x, short y, int time, const color *fColor
             }
         }
         previousPercentComplete = percentComplete;
-        fastForward = pauseBrogue(stepInMs);
+        fastForward = pauseBrogue(stepInMs, PAUSE_BEHAVIOR_DEFAULT);
     }
     for (j=0; j<messageLength; j++) {
         foreColor = colorFromComponents(dbufs[j].foreColorComponents);
@@ -2942,7 +2932,7 @@ void waitForKeystrokeOrMouseClick() {
 boolean confirm(char *prompt, boolean alsoDuringPlayback) {
     short retVal;
     brogueButton buttons[2] = {{{0}}};
-    cellDisplayBuffer rbuf[COLS][ROWS];
+    
     char whiteColorEscape[20] = "";
     char yellowColorEscape[20] = "";
 
@@ -2968,8 +2958,9 @@ boolean confirm(char *prompt, boolean alsoDuringPlayback) {
     buttons[1].hotkey[3] = ESCAPE_KEY;
     buttons[1].flags |= (B_WIDE_CLICK_AREA | B_KEYPRESS_HIGHLIGHT);
 
-    retVal = printTextBox(prompt, COLS/3, ROWS/3, COLS/3, &white, &interfaceBoxColor, rbuf, buttons, 2);
-    overlayDisplayBuffer(rbuf, NULL);
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+    retVal = printTextBox(prompt, COLS/3, ROWS/3, COLS/3, &white, &interfaceBoxColor, buttons, 2);
+    restoreDisplayBuffer(&rbuf);
 
     if (retVal == -1 || retVal == 1) { // If they canceled or pressed no.
         return false;
@@ -3230,29 +3221,29 @@ void displayRecentMessages() {
 // offset: index of oldest (visually highest) message to draw
 // height: height in rows of the message archive display area
 // rbuf: background display buffer to draw against
-static void drawMessageArchive(char messages[MESSAGE_ARCHIVE_LINES][COLS*2], short length, short offset, short height, cellDisplayBuffer rbuf[COLS][ROWS]) {
+static void drawMessageArchive(char messages[MESSAGE_ARCHIVE_LINES][COLS*2], short length, short offset, short height) {
     int i, j, k, fadePercent;
-    cellDisplayBuffer dbuf[COLS][ROWS];
+    screenDisplayBuffer dbuf;
 
-    clearDisplayBuffer(dbuf);
+    clearDisplayBuffer(&dbuf);
 
     for (i = 0; (MESSAGE_ARCHIVE_LINES - offset + i) < MESSAGE_ARCHIVE_LINES && i < ROWS && i < height; i++) {
-        printString(messages[MESSAGE_ARCHIVE_LINES - offset + i], mapToWindowX(0), i, &white, &black, dbuf);
+        printString(messages[MESSAGE_ARCHIVE_LINES - offset + i], mapToWindowX(0), i, &white, &black, &dbuf);
 
         // Set the dbuf opacity, and do a fade from bottom to top to make it clear that the bottom messages are the most recent.
         fadePercent = 50 * (length - offset + i) / length + 50;
         for (j = 0; j < DCOLS; j++) {
-            dbuf[mapToWindowX(j)][i].opacity = INTERFACE_OPACITY;
-            if (dbuf[mapToWindowX(j)][i].character != ' ') {
+            dbuf.cells[mapToWindowX(j)][i].opacity = INTERFACE_OPACITY;
+            if (dbuf.cells[mapToWindowX(j)][i].character != ' ') {
                 for (k=0; k<3; k++) {
-                    dbuf[mapToWindowX(j)][i].foreColorComponents[k] = dbuf[mapToWindowX(j)][i].foreColorComponents[k] * fadePercent / 100;
+                    dbuf.cells[mapToWindowX(j)][i].foreColorComponents[k] = dbuf.cells[mapToWindowX(j)][i].foreColorComponents[k] * fadePercent / 100;
                 }
             }
         }
     }
 
-    overlayDisplayBuffer(rbuf, 0);
-    overlayDisplayBuffer(dbuf, 0);
+    
+    overlayDisplayBuffer(&dbuf);
 }
 
 // Pull-down/pull-up animation.
@@ -3261,8 +3252,7 @@ static void drawMessageArchive(char messages[MESSAGE_ARCHIVE_LINES][COLS*2], sho
 // length: the number of rows in messages, filled from the "bottom", (unused rows have lower indexes)
 // offset: index of oldest (visually highest) message to draw in the fully expanded state
 // height: height in rows of the message archive display area in the fully expanded state
-// rbuf: background display buffer to draw against
-static void animateMessageArchive(boolean opening, char messages[MESSAGE_ARCHIVE_LINES][COLS*2], short length, short offset, short height, cellDisplayBuffer rbuf[COLS][ROWS]) {
+static void animateMessageArchive(boolean opening, char messages[MESSAGE_ARCHIVE_LINES][COLS*2], short length, short offset, short height) {
     short i;
     boolean fastForward;
 
@@ -3272,13 +3262,16 @@ static void animateMessageArchive(boolean opening, char messages[MESSAGE_ARCHIVE
          (opening ? i <= height : i >= MESSAGE_LINES);
          i += (opening ? 1 : -1)) {
 
-        drawMessageArchive(messages, length, offset - height + i, i, rbuf);
+        const SavedDisplayBuffer rbuf = saveDisplayBuffer();
 
-        if (!fastForward && pauseBrogue(opening ? 2 : 1)) {
+        drawMessageArchive(messages, length, offset - height + i, i);
+
+        if (!fastForward && pauseBrogue(opening ? 2 : 1, PAUSE_BEHAVIOR_DEFAULT)) {
             fastForward = true;
             dequeueEvent();
             i = (opening ? height - 1 : MESSAGE_LINES + 1); // skip to the end
         }
+        restoreDisplayBuffer(&rbuf);
     }
 }
 
@@ -3290,8 +3283,9 @@ static void animateMessageArchive(boolean opening, char messages[MESSAGE_ARCHIVE
 // rbuf: background display buffer to draw against
 //
 // returns the new offset, which can change if the player scrolled around before closing
-static short scrollMessageArchive(char messages[MESSAGE_ARCHIVE_LINES][COLS*2], short length, short offset, short height, cellDisplayBuffer rbuf[COLS][ROWS]) {
-    short lastOffset;
+static short scrollMessageArchive(char messages[MESSAGE_ARCHIVE_LINES][COLS*2], short length, short offset, short height) {
+    // Set `lastOffset` to a value different from `offset`, so that we always re-render the first time.
+    short lastOffset = offset-1;
     boolean exit;
     rogueEvent theEvent;
     signed long keystroke;
@@ -3300,8 +3294,14 @@ static short scrollMessageArchive(char messages[MESSAGE_ARCHIVE_LINES][COLS*2], 
         return offset;
     }
 
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+
     exit = false;
     do {
+        if (offset != lastOffset) {
+            restoreDisplayBuffer(&rbuf);
+            drawMessageArchive(messages, length, offset, height);
+        }
         lastOffset = offset;
         nextBrogueEvent(&theEvent, false, false, false);
 
@@ -3346,17 +3346,14 @@ static short scrollMessageArchive(char messages[MESSAGE_ARCHIVE_LINES][COLS*2], 
         }
 
         offset = max(height, min(offset, length));
-        if (offset != lastOffset) {
-            drawMessageArchive(messages, length, offset, height, rbuf);
-        }
     } while (!exit);
 
+    restoreDisplayBuffer(&rbuf);
     return offset;
 }
 
 void displayMessageArchive() {
     short length, offset, height;
-    cellDisplayBuffer rbuf[COLS][ROWS];
     char messageBuffer[MESSAGE_ARCHIVE_LINES][COLS*2];
 
     formatRecentMessages(messageBuffer, MESSAGE_ARCHIVE_LINES, &length, 0);
@@ -3368,13 +3365,11 @@ void displayMessageArchive() {
     height = min(length, MESSAGE_ARCHIVE_VIEW_LINES);
     offset = height;
 
-    copyDisplayBuffer(rbuf, displayBuffer);
 
-    animateMessageArchive(true, messageBuffer, length, offset, height, rbuf);
-    offset = scrollMessageArchive(messageBuffer, length, offset, height, rbuf);
-    animateMessageArchive(false, messageBuffer, length, offset, height, rbuf);
+    animateMessageArchive(true, messageBuffer, length, offset, height);
+    offset = scrollMessageArchive(messageBuffer, length, offset, height);
+    animateMessageArchive(false, messageBuffer, length, offset, height);
 
-    overlayDisplayBuffer(rbuf, 0);
     updateFlavorText();
     confirmMessages();
     updateMessageDisplay();
@@ -3908,7 +3903,7 @@ void refreshSideBar(short focusX, short focusY, boolean focusedEntityMustGoFirst
     restoreRNG;
 }
 
-void printString(const char *theString, short x, short y, const color *foreColor, const color *backColor, cellDisplayBuffer dbuf[COLS][ROWS]) {
+void printString(const char *theString, short x, short y, const color *foreColor, const color *backColor, screenDisplayBuffer *dbuf) {
     short i;
 
     color fColor = *foreColor;
@@ -4015,7 +4010,7 @@ short wrapText(char *to, const char *sourceText, short width) {
 
 // returns the y-coordinate of the last line
 short printStringWithWrapping(const char *theString, short x, short y, short width, const color *foreColor,
-                              const color *backColor, cellDisplayBuffer dbuf[COLS][ROWS]) {
+                              const color *backColor, screenDisplayBuffer *dbuf) {
     color fColor;
     char printString[TEXT_MAX_LENGTH];
     short i, px, py;
@@ -4062,7 +4057,6 @@ char nextKeyPress(boolean textInput) {
 
 void printHelpScreen() {
     short i, j;
-    cellDisplayBuffer dbuf[COLS][ROWS], rbuf[COLS][ROWS];
     char helpText[BROGUE_HELP_LINE_COUNT][DCOLS*3] = {
         "",
         "",
@@ -4108,30 +4102,33 @@ void printHelpScreen() {
         }
     }
 
-    clearDisplayBuffer(dbuf);
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+
+    screenDisplayBuffer dbuf;
+    clearDisplayBuffer(&dbuf);
 
     // Print the text to the dbuf.
     for (i=0; i<BROGUE_HELP_LINE_COUNT && i < ROWS; i++) {
-        printString(helpText[i], mapToWindowX(1), i, &itemMessageColor, &black, dbuf);
+        printString(helpText[i], mapToWindowX(1), i, &itemMessageColor, &black, &dbuf);
     }
 
     // Set the dbuf opacity.
     for (i=0; i<DCOLS; i++) {
         for (j=0; j<ROWS; j++) {
             //plotCharWithColor(' ', (windowpos) { mapToWindowX(i), j }, &black, &black);
-            dbuf[mapToWindowX(i)][j].opacity = INTERFACE_OPACITY;
+            dbuf.cells[mapToWindowX(i)][j].opacity = INTERFACE_OPACITY;
         }
     }
 
     // Display.
-    overlayDisplayBuffer(dbuf, rbuf);
+    overlayDisplayBuffer(&dbuf);
     waitForAcknowledgment();
-    overlayDisplayBuffer(rbuf, 0);
+    restoreDisplayBuffer(&rbuf);
     updateFlavorText();
     updateMessageDisplay();
 }
 
-static void printDiscoveries(short category, short count, unsigned short itemCharacter, short x, short y, cellDisplayBuffer dbuf[COLS][ROWS]) {
+static void printDiscoveries(short category, short count, unsigned short itemCharacter, short x, short y, screenDisplayBuffer *dbuf) {
     color goodColor, badColor;
     const color *theColor;
     char buf[COLS], buf2[COLS];
@@ -4181,38 +4178,40 @@ static void printDiscoveries(short category, short count, unsigned short itemCha
 
 void printDiscoveriesScreen() {
     short i, j, y;
-    cellDisplayBuffer dbuf[COLS][ROWS], rbuf[COLS][ROWS];
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
 
-    clearDisplayBuffer(dbuf);
+    screenDisplayBuffer dbuf;
 
-    printString("-- SCROLLS --", mapToWindowX(2), y = mapToWindowY(1), &flavorTextColor, &black, dbuf);
-    printDiscoveries(SCROLL, gameConst->numberScrollKinds, G_SCROLL, mapToWindowX(3), ++y, dbuf);
+    clearDisplayBuffer(&dbuf);
 
-    printString("-- RINGS --", mapToWindowX(2), y += gameConst->numberScrollKinds + 1, &flavorTextColor, &black, dbuf);
-    printDiscoveries(RING, NUMBER_RING_KINDS, G_RING, mapToWindowX(3), ++y, dbuf);
+    printString("-- SCROLLS --", mapToWindowX(2), y = mapToWindowY(1), &flavorTextColor, &black, &dbuf);
+    printDiscoveries(SCROLL, gameConst->numberScrollKinds, G_SCROLL, mapToWindowX(3), ++y, &dbuf);
 
-    printString("-- POTIONS --", mapToWindowX(29), y = mapToWindowY(1), &flavorTextColor, &black, dbuf);
-    printDiscoveries(POTION, gameConst->numberPotionKinds, G_POTION, mapToWindowX(30), ++y, dbuf);
+    printString("-- RINGS --", mapToWindowX(2), y += gameConst->numberScrollKinds + 1, &flavorTextColor, &black, &dbuf);
+    printDiscoveries(RING, NUMBER_RING_KINDS, G_RING, mapToWindowX(3), ++y, &dbuf);
 
-    printString("-- STAFFS --", mapToWindowX(53), y = mapToWindowY(1), &flavorTextColor, &black, dbuf);
-    printDiscoveries(STAFF, NUMBER_STAFF_KINDS, G_STAFF, mapToWindowX(54), ++y, dbuf);
+    printString("-- POTIONS --", mapToWindowX(29), y = mapToWindowY(1), &flavorTextColor, &black, &dbuf);
+    printDiscoveries(POTION, gameConst->numberPotionKinds, G_POTION, mapToWindowX(30), ++y, &dbuf);
 
-    printString("-- WANDS --", mapToWindowX(53), y += NUMBER_STAFF_KINDS + 1, &flavorTextColor, &black, dbuf);
-    printDiscoveries(WAND, gameConst->numberWandKinds, G_WAND, mapToWindowX(54), ++y, dbuf);
+    printString("-- STAFFS --", mapToWindowX(53), y = mapToWindowY(1), &flavorTextColor, &black, &dbuf);
+    printDiscoveries(STAFF, NUMBER_STAFF_KINDS, G_STAFF, mapToWindowX(54), ++y, &dbuf);
+
+    printString("-- WANDS --", mapToWindowX(53), y += NUMBER_STAFF_KINDS + 1, &flavorTextColor, &black, &dbuf);
+    printDiscoveries(WAND, gameConst->numberWandKinds, G_WAND, mapToWindowX(54), ++y, &dbuf);
 
     printString(KEYBOARD_LABELS ? "-- press any key to continue --" : "-- touch anywhere to continue --",
-                mapToWindowX(20), mapToWindowY(DROWS-2), &itemMessageColor, &black, dbuf);
+                mapToWindowX(20), mapToWindowY(DROWS-2), &itemMessageColor, &black, &dbuf);
 
     for (i=0; i<COLS; i++) {
         for (j=0; j<ROWS; j++) {
-            dbuf[i][j].opacity = (i < STAT_BAR_WIDTH ? 0 : INTERFACE_OPACITY);
+            dbuf.cells[i][j].opacity = (i < STAT_BAR_WIDTH ? 0 : INTERFACE_OPACITY);
         }
     }
-    overlayDisplayBuffer(dbuf, rbuf);
+    overlayDisplayBuffer(&dbuf);
 
     waitForKeystrokeOrMouseClick();
 
-    overlayDisplayBuffer(rbuf, NULL);
+    restoreDisplayBuffer(&rbuf);
 }
 
 void printHighScores(boolean hiliteMostRecent) {
@@ -4396,13 +4395,13 @@ void printProgressBar(short x, short y, const char barLabel[COLS], long amtFille
 void highlightScreenCell(short x, short y, const color *highlightColor, short strength) {
     color tempColor;
 
-    tempColor = colorFromComponents(displayBuffer[x][y].foreColorComponents);
+    tempColor = colorFromComponents(displayBuffer.cells[x][y].foreColorComponents);
     applyColorAugment(&tempColor, highlightColor, strength);
-    storeColorComponents(displayBuffer[x][y].foreColorComponents, &tempColor);
+    storeColorComponents(displayBuffer.cells[x][y].foreColorComponents, &tempColor);
 
-    tempColor = colorFromComponents(displayBuffer[x][y].backColorComponents);
+    tempColor = colorFromComponents(displayBuffer.cells[x][y].backColorComponents);
     applyColorAugment(&tempColor, highlightColor, strength);
-    storeColorComponents(displayBuffer[x][y].backColorComponents, &tempColor);
+    storeColorComponents(displayBuffer.cells[x][y].backColorComponents, &tempColor);
 }
 
 // Like `armorValueIfUnenchanted` for the currently-equipped armor, but takes the penalty from
@@ -4880,24 +4879,24 @@ short printTerrainInfo(short x, short y, short py, const char *description, bool
 }
 
 void rectangularShading(short x, short y, short width, short height,
-                        const color *backColor, short opacity, cellDisplayBuffer dbuf[COLS][ROWS]) {
+                        const color *backColor, short opacity, screenDisplayBuffer* dbuf) {
     short i, j, dist;
 
     assureCosmeticRNG;
     for (i=0; i<COLS; i++) {
         for (j=0; j<ROWS; j++) {
-            storeColorComponents(dbuf[i][j].backColorComponents, backColor);
+            storeColorComponents(dbuf->cells[i][j].backColorComponents, backColor);
 
             if (i >= x && i < x + width
                 && j >= y && j < y + height) {
-                dbuf[i][j].opacity = min(100, opacity);
+                dbuf->cells[i][j].opacity = min(100, opacity);
             } else {
                 dist = 0;
                 dist += max(0, max(x - i, i - x - width + 1));
                 dist += max(0, max(y - j, j - y - height + 1));
-                dbuf[i][j].opacity = (int) ((opacity - 10) / max(1, dist));
-                if (dbuf[i][j].opacity < 3) {
-                    dbuf[i][j].opacity = 0;
+                dbuf->cells[i][j].opacity = (int) ((opacity - 10) / max(1, dist));
+                if (dbuf->cells[i][j].opacity < 3) {
+                    dbuf->cells[i][j].opacity = 0;
                 }
             }
         }
@@ -4926,10 +4925,7 @@ void rectangularShading(short x, short y, short width, short height,
 // (Returns -1 for canceled; otherwise the button index number.)
 short printTextBox(char *textBuf, short x, short y, short width,
                    const color *foreColor, const color *backColor,
-                   cellDisplayBuffer rbuf[COLS][ROWS],
                    brogueButton *buttons, short buttonCount) {
-    cellDisplayBuffer dbuf[COLS][ROWS];
-
     short x2, y2, lineCount, i, bx, by, padLines;
 
     if (width <= 0) {
@@ -4985,10 +4981,11 @@ short printTextBox(char *textBuf, short x, short y, short width,
         padLines = 0;
     }
 
-    clearDisplayBuffer(dbuf);
-    printStringWithWrapping(textBuf, x2, y2, width, foreColor, backColor, dbuf);
-    rectangularShading(x2, y2, width, lineCount + padLines, backColor, INTERFACE_OPACITY, dbuf);
-    overlayDisplayBuffer(dbuf, rbuf);
+    screenDisplayBuffer dbuf;
+    clearDisplayBuffer(&dbuf);
+    printStringWithWrapping(textBuf, x2, y2, width, foreColor, backColor, &dbuf);
+    rectangularShading(x2, y2, width, lineCount + padLines, backColor, INTERFACE_OPACITY, &dbuf);
+    overlayDisplayBuffer(&dbuf);
 
     if (buttonCount > 0) {
         return buttonInputLoop(buttons, buttonCount, x2, y2, width, by - y2 + 1 + padLines, NULL);
@@ -4997,11 +4994,10 @@ short printTextBox(char *textBuf, short x, short y, short width,
     }
 }
 
-void printMonsterDetails(creature *monst, cellDisplayBuffer rbuf[COLS][ROWS]) {
+void printMonsterDetails(creature *monst) {
     char textBuf[COLS * 100];
-
     monsterDetails(textBuf, monst);
-    printTextBox(textBuf, monst->loc.x, 0, 0, &white, &black, rbuf, NULL, 0);
+    printTextBox(textBuf, monst->loc.x, 0, 0, &white, &black, NULL, 0);
 }
 
 // Displays the item info box with the dark blue background.
@@ -5009,8 +5005,7 @@ void printMonsterDetails(creature *monst, cellDisplayBuffer rbuf[COLS][ROWS]) {
 // Returns the key of an action to take, if any; otherwise -1.
 unsigned long printCarriedItemDetails(item *theItem,
                                       short x, short y, short width,
-                                      boolean includeButtons,
-                                      cellDisplayBuffer rbuf[COLS][ROWS]) {
+                                      boolean includeButtons) {
     char textBuf[COLS * 100], goldColorEscape[5] = "", whiteColorEscape[5] = "";
     brogueButton buttons[20] = {{{0}}};
     short b;
@@ -5077,7 +5072,7 @@ unsigned long printCarriedItemDetails(item *theItem,
         buttons[b].hotkey[2] = DOWN_ARROW;
         b++;
     }
-    b = printTextBox(textBuf, x, y, width, &white, &interfaceBoxColor, rbuf, buttons, b);
+    b = printTextBox(textBuf, x, y, width, &white, &interfaceBoxColor, buttons, b);
 
     if (!includeButtons) {
         waitForKeystrokeOrMouseClick();
@@ -5092,9 +5087,9 @@ unsigned long printCarriedItemDetails(item *theItem,
 }
 
 // Returns true if an action was taken.
-void printFloorItemDetails(item *theItem, cellDisplayBuffer rbuf[COLS][ROWS]) {
+void printFloorItemDetails(item *theItem) {
     char textBuf[COLS * 100];
-
     itemDetails(textBuf, theItem);
-    printTextBox(textBuf, theItem->loc.x, 0, 0, &white, &black, rbuf, NULL, 0);
+
+    printTextBox(textBuf, theItem->loc.x, 0, 0, &white, &black, NULL, 0);
 }

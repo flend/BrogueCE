@@ -44,9 +44,7 @@ static void recordChar(unsigned char c) {
     if (locationInRecordingBuffer < INPUT_RECORD_BUFFER_MAX_SIZE) {
         inputRecordBuffer[locationInRecordingBuffer++] = c;
         recordingLocation++;
-        printf("buffer size: %d", locationInRecordingBuffer);
-    }
-    else {
+    } else {
         printf("Recording buffer length exceeded at location %li! Turn number %li.\n", recordingLocation - 1, rogue.playerTurnNumber);
     }
 }
@@ -223,7 +221,11 @@ static void writeHeaderInfo(char *path) {
 }
 
 void flushBufferToFile() {
-    if (!rogue.playbackMode && !currentFilePath[0] == '\0') {
+    if (rogue.playbackMode) {
+        return;
+    }
+
+    if (!currentFilePath[0] == '\0') {
         short i;
         FILE *recordFile;
 
@@ -301,7 +303,6 @@ If this is a different computer from the one on which the recording was saved, t
 might succeed on the original computer."
 
 static void playbackPanic() {
-    cellDisplayBuffer rbuf[COLS][ROWS];
 
     if (!rogue.playbackOOS) {
         rogue.playbackFastForward = false;
@@ -315,13 +316,14 @@ static void playbackPanic() {
         confirmMessages();
         message("Playback is out of sync.", 0);
 
-        printTextBox(OOS_APOLOGY, 0, 0, 0, &white, &black, rbuf, NULL, 0);
+        const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+        printTextBox(OOS_APOLOGY, 0, 0, 0, &white, &black, NULL, 0);
 
         rogue.playbackMode = false;
         displayMoreSign();
         rogue.playbackMode = true;
 
-        overlayDisplayBuffer(rbuf, 0);
+        restoreDisplayBuffer(&rbuf);
 
         if (nonInteractivePlayback) {
             rogue.gameHasEnded = true;
@@ -329,7 +331,7 @@ static void playbackPanic() {
         rogue.gameExitStatusCode = EXIT_STATUS_FAILURE_RECORDING_OOS;
 
         printf("Playback panic at location %li! Turn number %li.\n", recordingLocation - 1, rogue.playerTurnNumber);
-        overlayDisplayBuffer(rbuf, 0);
+        restoreDisplayBuffer(&rbuf);
 
         mainInputLoop();
     }
@@ -431,21 +433,20 @@ static void loadNextAnnotation() {
 }
 
 void displayAnnotation() {
-    cellDisplayBuffer rbuf[COLS][ROWS];
-
     if (rogue.playbackMode
         && rogue.playerTurnNumber == rogue.nextAnnotationTurn) {
 
         if (!rogue.playbackFastForward) {
             refreshSideBar(-1, -1, false);
 
-            printTextBox(rogue.nextAnnotation, player.loc.x, 0, 0, &black, &white, rbuf, NULL, 0);
+            const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+            printTextBox(rogue.nextAnnotation, player.loc.x, 0, 0, &black, &white, NULL, 0);
 
             rogue.playbackMode = false;
             displayMoreSign();
             rogue.playbackMode = true;
 
-            overlayDisplayBuffer(rbuf, 0);
+            restoreDisplayBuffer(&rbuf);
         }
 
         loadNextAnnotation();
@@ -637,7 +638,7 @@ static boolean unpause() {
 
 static void printPlaybackHelpScreen() {
     short i, j;
-    cellDisplayBuffer dbuf[COLS][ROWS], rbuf[COLS][ROWS];
+    screenDisplayBuffer dbuf;
     char helpText[PLAYBACK_HELP_LINE_COUNT][80] = {
         "Commands:",
         "",
@@ -670,23 +671,25 @@ static void printPlaybackHelpScreen() {
         }
     }
 
-    clearDisplayBuffer(dbuf);
+    clearDisplayBuffer(&dbuf);
 
     for (i=0; i<PLAYBACK_HELP_LINE_COUNT; i++) {
-        printString(helpText[i], mapToWindowX(5), mapToWindowY(i), &itemMessageColor, &black, dbuf);
+        printString(helpText[i], mapToWindowX(5), mapToWindowY(i), &itemMessageColor, &black, &dbuf);
     }
 
     for (i=0; i<COLS; i++) {
         for (j=0; j<ROWS; j++) {
-            dbuf[i][j].opacity = (i < STAT_BAR_WIDTH ? 0 : INTERFACE_OPACITY);
+            dbuf.cells[i][j].opacity = (i < STAT_BAR_WIDTH ? 0 : INTERFACE_OPACITY);
         }
     }
-    overlayDisplayBuffer(dbuf, rbuf);
+
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+    overlayDisplayBuffer(&dbuf);
 
     rogue.playbackMode = false;
     waitForAcknowledgment();
     rogue.playbackMode = true;
-    overlayDisplayBuffer(rbuf, NULL);
+    restoreDisplayBuffer(&rbuf);
 }
 
 static void resetPlayback() {
@@ -715,7 +718,7 @@ static void seek(unsigned long seekTarget, enum recordingSeekModes seekMode) {
     unsigned long progressBarRefreshInterval = 1, startTurnNumber = 0, targetTurnNumber = 0, avgTurnsPerLevel = 1;
     rogueEvent theEvent;
     boolean pauseState, useProgressBar = false, arrivedAtDestination = false;
-    cellDisplayBuffer dbuf[COLS][ROWS];
+    screenDisplayBuffer dbuf;
 
     pauseState = rogue.playbackPaused;
 
@@ -761,9 +764,9 @@ static void seek(unsigned long seekTarget, enum recordingSeekModes seekMode) {
     }
 
     if (useProgressBar) {
-        clearDisplayBuffer(dbuf);
-        rectangularShading((COLS - 20) / 2, ROWS / 2, 20, 1, &black, INTERFACE_OPACITY, dbuf);
-        overlayDisplayBuffer(dbuf, 0);
+        clearDisplayBuffer(&dbuf);
+        rectangularShading((COLS - 20) / 2, ROWS / 2, 20, 1, &black, INTERFACE_OPACITY, &dbuf);
+        overlayDisplayBuffer(&dbuf);
         commitDraws();
     }
     rogue.playbackFastForward = true;
@@ -774,7 +777,7 @@ static void seek(unsigned long seekTarget, enum recordingSeekModes seekMode) {
             printProgressBar((COLS - 20) / 2, ROWS / 2, "[     Loading...   ]",
                              rogue.playerTurnNumber - startTurnNumber,
                              targetTurnNumber - startTurnNumber, &darkPurple, false);
-            while (pauseBrogue(0)) { // pauseBrogue(0) is necessary to flush the display to the window in SDL
+            while (pauseBrogue(0, PAUSE_BEHAVIOR_DEFAULT)) { // pauseBrogue(0) is necessary to flush the display to the window in SDL
                 if (rogue.gameHasEnded) {
                     return;
                 }
@@ -1336,7 +1339,7 @@ boolean loadSavedGame() {
     unsigned long previousRecordingLocation;
     rogueEvent theEvent;
 
-    cellDisplayBuffer dbuf[COLS][ROWS];
+    screenDisplayBuffer dbuf;
 
     randomNumbersGenerated = 0;
     rogue.playbackMode = true;
@@ -1351,10 +1354,10 @@ boolean loadSavedGame() {
 
         progressBarInterval = max(1, lengthOfPlaybackFile / 100);
         previousRecordingLocation = -1; // unsigned
-        clearDisplayBuffer(dbuf);
-        rectangularShading((COLS - 20) / 2, ROWS / 2, 20, 1, &black, INTERFACE_OPACITY, dbuf);
+        clearDisplayBuffer(&dbuf);
+        rectangularShading((COLS - 20) / 2, ROWS / 2, 20, 1, &black, INTERFACE_OPACITY, &dbuf);
         rogue.playbackFastForward = false;
-        overlayDisplayBuffer(dbuf, 0);
+        overlayDisplayBuffer(&dbuf);
         rogue.playbackFastForward = true;
 
         while (recordingLocation < lengthOfPlaybackFile
@@ -1371,7 +1374,7 @@ boolean loadSavedGame() {
             if (recordingLocation / progressBarInterval != previousRecordingLocation / progressBarInterval && !rogue.playbackOOS) {
                 rogue.playbackFastForward = false; // so that pauseBrogue looks for inputs
                 printProgressBar((COLS - 20) / 2, ROWS / 2, "[     Loading...   ]", recordingLocation, lengthOfPlaybackFile, &darkPurple, false);
-                while (pauseBrogue(0)) { // pauseBrogue(0) is necessary to flush the display to the window in SDL, as well as look for inputs
+                while (pauseBrogue(0, PAUSE_BEHAVIOR_DEFAULT)) { // pauseBrogue(0) is necessary to flush the display to the window in SDL, as well as look for inputs
                     rogue.creaturesWillFlashThisTurn = false; // prevent monster flashes from showing up on screen
                     nextBrogueEvent(&theEvent, true, false, true);
                     if (rogue.gameHasEnded || theEvent.eventType == KEYSTROKE && theEvent.param1 == ESCAPE_KEY) {

@@ -316,7 +316,7 @@ static void stackButtons(brogueButton *buttons, short buttonCount, windowpos sta
 /// @param buttons An array of initialized, positioned buttons, with text
 /// @param buttonCount The number of buttons in the array
 /// @param shadowBuf The display buffer object for the background/shadow
-static void initializeMenu(buttonState *menu, brogueButton *buttons, short buttonCount, cellDisplayBuffer shadowBuf[COLS][ROWS]) {
+static void initializeMenu(buttonState *menu, brogueButton *buttons, short buttonCount, screenDisplayBuffer *shadowBuf) {
     memset((void *) menu, 0, sizeof( buttonState ));
     short minX, maxX, minY, maxY;
     minX = COLS;
@@ -334,13 +334,12 @@ static void initializeMenu(buttonState *menu, brogueButton *buttons, short butto
     short width = maxX - minX;
     short height = maxY - minY;
 
-    clearDisplayBuffer(shadowBuf);
-    // copies the current display to a reversion buffer. draws the buttons on the button state display buffer.
     initializeButtonState(menu, buttons, buttonCount, minX, minY, width, height);
 
     // Draws a rectangular shaded area of the specified color and opacity to a buffer. Position x, y is the upper/left.
     // The shading effect outside the rectangle decreases with distance.
     // Warning: shading of neighboring rectangles stacks
+    clearDisplayBuffer(shadowBuf);
     rectangularShading(minX, minY, width, height + 1, &black, INTERFACE_OPACITY, shadowBuf);
 }
 
@@ -349,7 +348,7 @@ static void initializeMenu(buttonState *menu, brogueButton *buttons, short butto
 /// @param buttons The main menu buttons
 /// @param position The window position of the quit button
 /// @param shadowBuf The display buffer object for the background/shadow
-static void initializeMainMenu(buttonState *menu, brogueButton *buttons, windowpos position, cellDisplayBuffer shadowBuf[COLS][ROWS]) {
+static void initializeMainMenu(buttonState *menu, brogueButton *buttons, windowpos position, screenDisplayBuffer *shadowBuf) {
     initializeMainMenuButtons(buttons);
     stackButtons(buttons, MAIN_MENU_BUTTON_COUNT, position, 2, false);
 
@@ -361,7 +360,7 @@ static void initializeMainMenu(buttonState *menu, brogueButton *buttons, windowp
 /// @param shadowBuf The display buffer for the menu background/shadow
 /// @param buttons The buttons to add to the menu
 /// @param position The window position of the anchor button. All buttons are positioned relative to this location.
-static void initializeFlyoutMenu(buttonState *menu, cellDisplayBuffer shadowBuf[COLS][ROWS], brogueButton *buttons, windowpos position) {
+static void initializeFlyoutMenu(buttonState *menu, screenDisplayBuffer *shadowBuf, brogueButton *buttons, windowpos position) {
     short buttonCount = 0;
 
     if (rogue.nextGame == NG_FLYOUT_PLAY) {
@@ -402,12 +401,12 @@ static void chooseGameVariant() {
     append(textBuf, "Die faster and more often in this quarter-length version of the classic game!\n\n", TEXT_MAX_LENGTH);
 
     brogueButton buttons[2];
-    cellDisplayBuffer rbuf[COLS][ROWS];
-    copyDisplayBuffer(rbuf, displayBuffer);
     initializeMainMenuButton(&(buttons[0]), "  %sR%sapid Brogue     ", 'r', 'R', NG_NOTHING);
     initializeMainMenuButton(&(buttons[1]), "     %sB%srogue        ", 'b', 'B', NG_NOTHING);
-    gameVariantChoice = printTextBox(textBuf, 20, 7, 45, &white, &black, rbuf, buttons, 2);
-    overlayDisplayBuffer(rbuf, NULL);
+    
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+    gameVariantChoice = printTextBox(textBuf, 20, 7, 45, &white, &black, buttons, 2);
+    restoreDisplayBuffer(&rbuf);
 
     if (gameVariantChoice == 1) {
         gameVariant = VARIANT_BROGUE;
@@ -442,13 +441,12 @@ static void chooseGameMode() {
                     "(Your score is not saved.)", TEXT_MAX_LENGTH);
 
     brogueButton buttons[3];
-    cellDisplayBuffer rbuf[COLS][ROWS];
-    copyDisplayBuffer(rbuf, displayBuffer);
     initializeMainMenuButton(&(buttons[0]), "      %sW%sizard       ", 'w', 'W', NG_NOTHING);
     initializeMainMenuButton(&(buttons[1]), "       %sE%sasy        ", 'e', 'E', NG_NOTHING);
     initializeMainMenuButton(&(buttons[2]), "      %sN%sormal       ", 'n', 'N', NG_NOTHING);
-    gameMode = printTextBox(textBuf, 10, 5, 66, &white, &black, rbuf, buttons, 3);
-    overlayDisplayBuffer(rbuf, NULL);
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+    gameMode = printTextBox(textBuf, 10, 5, 66, &white, &black, buttons, 3);
+    restoreDisplayBuffer(&rbuf);
     if (gameMode == 0) {
         rogue.wizard = true;
         rogue.easyMode = false;
@@ -485,16 +483,16 @@ static windowpos getNextGameButtonPos(brogueButton *buttons) {
 /// @brief Changes the appearance of the main menu buttons based the active flyout menu (if any), so
 /// the button associated with the active flyout is more prominently displayed.
 /// @param menu The main menu
-static void redrawMainMenuButtons(buttonState *menu) {
+static void redrawMainMenuButtons(buttonState *menu, screenDisplayBuffer *button_dbuf) {
     enum buttonDrawStates drawState;
 
     if (rogue.nextGame == NG_NOTHING) {
-        drawButtonsInState(menu);
+        drawButtonsInState(menu, button_dbuf);
     } else {
         //darken the main menu buttons not selected
         for (int i = 0; i < MAIN_MENU_BUTTON_COUNT; i++) {
             drawState = (menu->buttons[i].command == rogue.nextGame) ? BUTTON_NORMAL : BUTTON_PRESSED;
-            drawButton(&(menu->buttons[i]), drawState, menu->dbuf);
+            drawButton(&(menu->buttons[i]), drawState, button_dbuf);
         }
     }
 }
@@ -511,12 +509,12 @@ static void titleMenu() {
     // Main menu
     buttonState mainMenu;
     brogueButton mainButtons[MAIN_MENU_BUTTON_COUNT];
-    cellDisplayBuffer mainShadowBuf[COLS][ROWS];
+    screenDisplayBuffer mainShadowBuf;
 
     // Flyout menu
     buttonState flyoutMenu;
     brogueButton flyoutButtons[10];
-    cellDisplayBuffer flyoutShadowBuf[COLS][ROWS];
+    screenDisplayBuffer flyoutShadowBuf;
 
     // Initialize the RNG so the flames aren't always the same.
     seedRandomGenerator(0);
@@ -529,7 +527,7 @@ static void titleMenu() {
 
     // Initialize the main menu with buttons stacked on top of the quit button
     windowpos quitButtonPosition = {COLS - 20, ROWS - 3};
-    initializeMainMenu(&mainMenu, mainButtons, quitButtonPosition, mainShadowBuf);
+    initializeMainMenu(&mainMenu, mainButtons, quitButtonPosition, &mainShadowBuf);
 
     // Display the title and flames
     initializeMenuFlames(true, colors, colorStorage, colorSources, flames, mask);
@@ -545,35 +543,41 @@ static void titleMenu() {
     do {
         if (isFlyoutActive()) {
             bPos = getNextGameButtonPos(mainButtons);
-            initializeFlyoutMenu(&flyoutMenu, flyoutShadowBuf, flyoutButtons, (windowpos){FLYOUT_X, bPos.window_y});
+            initializeFlyoutMenu(&flyoutMenu, &flyoutShadowBuf, flyoutButtons, (windowpos){FLYOUT_X, bPos.window_y});
         }
-        redrawMainMenuButtons(&mainMenu);
 
         // Inner input loop until the user selects a button or presses a key. For mouse input, a button
         // is considered selected only on the MOUSE_UP event.
         do {
             if (isApplicationActive()) {
-                // Revert the display.
-                overlayDisplayBuffer(mainMenu.rbuf, NULL);
-
                 // Update the display.
                 updateMenuFlames(colors, colorSources, flames);
                 drawMenuFlames(flames, mask);
-                overlayDisplayBuffer(mainShadowBuf, NULL);
-                overlayDisplayBuffer(mainMenu.dbuf, NULL);
+                overlayDisplayBuffer(&mainShadowBuf);
+
+                // Draw the main menu buttons
+                screenDisplayBuffer dbuf;
+                clearDisplayBuffer(&dbuf);
+                redrawMainMenuButtons(&mainMenu, &dbuf);
+                overlayDisplayBuffer(&dbuf);
 
                 //Show flyout if selected
                 if (isFlyoutActive()) {
-                    overlayDisplayBuffer(flyoutShadowBuf, NULL);
-                    overlayDisplayBuffer(flyoutMenu.dbuf, NULL);
+                    overlayDisplayBuffer(&flyoutShadowBuf);
+                    screenDisplayBuffer flyout_dbuf;
+                    clearDisplayBuffer(&flyout_dbuf);
+                    drawButtonsInState(&flyoutMenu, &flyout_dbuf);
+                    overlayDisplayBuffer(&flyout_dbuf);
+                    mainMenu.buttonDepressed = -1;
+                    mainMenu.buttonFocused = -1;
                 }
                 // Pause briefly.
-                if (pauseBrogue(MENU_FLAME_UPDATE_DELAY)) {
+                if (pauseBrogue(MENU_FLAME_UPDATE_DELAY, (PauseBehavior){.interuptForMouseMove = true})) {
                     // There was input during the pause! Get the input.
                     nextBrogueEvent(&theEvent, true, false, true);
 
                     // quickstart a new game
-                    if (theEvent.param1 == 'n' || theEvent.param1 == 'N') {
+                    if (theEvent.eventType == KEYSTROKE && (theEvent.param1 == 'n' || theEvent.param1 == 'N')) {
                         rogue.nextGame = NG_NEW_GAME;
                         break;
                     }
@@ -590,9 +594,9 @@ static void titleMenu() {
                             chooseGameVariant();
                         }
                     }
-
                     // Process the main menu input
                     mainIndex = processButtonInput(&mainMenu, NULL, &theEvent);
+
                     if (theEvent.eventType == MOUSE_UP || theEvent.eventType == KEYSTROKE) {
                         if (mainIndex != - 1 && rogue.nextGame != mainButtons[mainIndex].command) {
                             rogue.nextGame = mainButtons[mainIndex].command;
@@ -604,7 +608,7 @@ static void titleMenu() {
                     }
                 }
             } else {
-                pauseBrogue(64);
+                pauseBrogue(64, PAUSE_BEHAVIOR_DEFAULT);
             }
         } while (theEvent.eventType != MOUSE_UP && theEvent.eventType != KEYSTROKE && (isFlyoutActive() || rogue.nextGame == NG_NOTHING));
     } while (isFlyoutActive() || rogue.nextGame == NG_NOTHING);
@@ -629,15 +633,15 @@ int quitImmediately() {
 }
 
 void dialogAlert(char *message) {
-    cellDisplayBuffer rbuf[COLS][ROWS];
 
     brogueButton OKButton;
     initializeButton(&OKButton);
     strcpy(OKButton.text, "     OK     ");
     OKButton.hotkey[0] = RETURN_KEY;
     OKButton.hotkey[1] = ACKNOWLEDGE_KEY;
-    printTextBox(message, COLS/3, ROWS/3, COLS/3, &white, &interfaceBoxColor, rbuf, &OKButton, 1);
-    overlayDisplayBuffer(rbuf, NULL);
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
+    printTextBox(message, COLS/3, ROWS/3, COLS/3, &white, &interfaceBoxColor, &OKButton, 1);
+    restoreDisplayBuffer(&rbuf);
 }
 
 static boolean stringsExactlyMatch(const char *string1, const char *string2) {
@@ -683,14 +687,15 @@ boolean dialogChooseFile(char *path, const char *suffix, const char *prompt) {
     brogueButton buttons[FILES_ON_PAGE_MAX + 2];
     fileEntry *files;
     boolean retval = false, again;
-    cellDisplayBuffer dbuf[COLS][ROWS], rbuf[COLS][ROWS];
+    screenDisplayBuffer dbuf;
+    
     const color *dialogColor = &interfaceBoxColor;
     char *membuf;
     char fileDate [11];
 
     suffixLength = strlen(suffix);
     files = listFiles(&count, &membuf);
-    copyDisplayBuffer(rbuf, displayBuffer);
+    const SavedDisplayBuffer rbuf = saveDisplayBuffer();
     maxPathLength = strLenWithoutEscapes(prompt);
 
     // First, we want to filter the list by stripping out any filenames that do not end with suffix.
@@ -797,10 +802,10 @@ boolean dialogChooseFile(char *path, const char *suffix, const char *prompt) {
         }
 
         if (count) {
-            clearDisplayBuffer(dbuf);
-            printString(prompt, x, y - 1, &itemMessageColor, dialogColor, dbuf);
-            rectangularShading(x - 1, y - 1, width + 1, height + 1, dialogColor, INTERFACE_OPACITY, dbuf);
-            overlayDisplayBuffer(dbuf, NULL);
+            clearDisplayBuffer(&dbuf);
+            printString(prompt, x, y - 1, &itemMessageColor, dialogColor, &dbuf);
+            rectangularShading(x - 1, y - 1, width + 1, height + 1, dialogColor, INTERFACE_OPACITY, &dbuf);
+            overlayDisplayBuffer(&dbuf);
 
 //          for (j=0; j<min(count - currentPageStart, FILES_ON_PAGE_MAX); j++) {
 //              strftime(fileDate, sizeof(fileDate), DATE_FORMAT, &files[currentPageStart+j].date);
@@ -822,7 +827,7 @@ boolean dialogChooseFile(char *path, const char *suffix, const char *prompt) {
 //              printf("\n   (button name)Sanity check AFTER: %s", buttons[j].text);
 //          }
 
-            overlayDisplayBuffer(rbuf, NULL);
+            restoreDisplayBuffer(&rbuf);
 
             if (i < min(count - currentPageStart, FILES_ON_PAGE_MAX)) {
                 if (i >= 0) {
@@ -870,11 +875,11 @@ void mainBrogueJunction() {
     // clear screen and display buffer
     for (i=0; i<COLS; i++) {
         for (j=0; j<ROWS; j++) {
-            displayBuffer[i][j].character = 0;
-            displayBuffer[i][j].opacity = 100;
+            displayBuffer.cells[i][j].character = 0;
+            displayBuffer.cells[i][j].opacity = 100;
             for (k=0; k<3; k++) {
-                displayBuffer[i][j].foreColorComponents[k] = 0;
-                displayBuffer[i][j].backColorComponents[k] = 0;
+                displayBuffer.cells[i][j].foreColorComponents[k] = 0;
+                displayBuffer.cells[i][j].backColorComponents[k] = 0;
             }
             plotCharWithColor(' ', (windowpos){ i, j }, &black, &black);
         }
