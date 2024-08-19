@@ -3398,7 +3398,6 @@ extern "C" {
     item *dropItem(item *theItem);
     itemTable *tableForItemCategory(enum itemCategory theCat);
     boolean isVowelish(char *theChar);
-    const char *getOrdinalSuffix(int number);
     short charmEffectDuration(short charmKind, short enchant);
     short charmRechargeDelay(short charmKind, short enchant);
     boolean itemIsCarried(item *theItem);
