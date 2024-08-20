@@ -415,9 +415,9 @@ static void chooseGameVariant() {
     restoreDisplayBuffer(&rbuf);
 
     if (gameVariantChoice == 0) {
-        gameVariant = VARIANT_BROGUE;
-    } else if (gameVariantChoice == 1) {
         gameVariant = VARIANT_RAPID_BROGUE;
+    } else if (gameVariantChoice == 1) {
+        gameVariant = VARIANT_BROGUE;
     } else if (gameVariantChoice == 2) {
         gameVariant = VARIANT_BULLET_BROGUE;
     } else {
