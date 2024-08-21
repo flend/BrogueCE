@@ -49,6 +49,7 @@ creatureList purgatory;     // used to hold dead allies awaiting resurrection
 item *floorItems;
 item *packItems;
 item *monsterItemsHopper;
+machineInfo *allMachineInfo;
 
 char displayedMessage[MESSAGE_LINES][COLS*2];
 short messagesUnconfirmed;

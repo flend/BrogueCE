@@ -333,6 +333,8 @@ void initializeRogue(uint64_t seed) {
     memset(monsterItemsHopper, '\0', sizeof(item));
     monsterItemsHopper->nextItem = NULL;
 
+    allMachineInfo = createMachineInfo(0, 0, 0);
+
     for (i = 0; i < MAX_ITEMS_IN_MONSTER_ITEMS_HOPPER; i++) {
         theItem = generateItem(ALL_ITEMS & ~FOOD, -1); // Monsters can't carry food: the food clock cannot be cheated!
         theItem->nextItem = monsterItemsHopper->nextItem;
@@ -1028,6 +1030,8 @@ void freeEverything() {
     for (i=0; i<MAX_WAYPOINT_COUNT; i++) {
         freeGrid(rogue.wpDistance[i]);
     }
+
+    deleteAllMachineInfo(allMachineInfo);
 
     deleteAllFlares();
     if (rogue.flares) {

@@ -25,6 +25,14 @@
 #include "GlobalsBase.h"
 #include "Globals.h"
 
+static boolean buildAMachineOrChildMachine(enum machineTypes bp,
+                          short originX, short originY,
+                          unsigned long requiredMachineFlags,
+                          item *adoptiveItem,
+                          item *parentSpawnedItems[50],
+                          creature *parentSpawnedMonsters[50],
+                          machineInfo *thisMachineInfoChain);
+
 short topBlobMinX, topBlobMinY, blobWidth, blobHeight;
 
 boolean cellHasTerrainFlag(pos loc, unsigned long flagMask) {
@@ -979,14 +987,64 @@ typedef struct machineData {
     short sCols[DCOLS];
 } machineData;
 
+machineInfo *createMachineInfo(int level, int id, int type) {
+    machineInfo *theInfo = (machineInfo *) malloc(sizeof(machineInfo));
+    memset(theInfo, '\0', sizeof(machineInfo));
+
+    machineInfo *theChildInfo = (machineInfo *) malloc(sizeof(machineInfo));
+    memset(theChildInfo, '\0', sizeof(machineInfo));
+
+    theInfo->level = level;
+    theInfo->type = type;
+    theInfo->id = id;
+    theInfo->childMachineInfo = theChildInfo;
+    theInfo->nextMachineInfo = NULL;
+
+    return theInfo;
+}
+
+static void deleteMachineInfo(machineInfo *machineInfo) {
+    free(machineInfo);
+}
+
+void deleteAllMachineInfo(machineInfo *theChain) {
+    machineInfo *thisMachineInfo, *thisMachineInfo2;
+    for (thisMachineInfo = theChain; thisMachineInfo != NULL; thisMachineInfo = thisMachineInfo2) {
+        thisMachineInfo2 = thisMachineInfo->nextMachineInfo;
+        deleteAllMachineInfo(thisMachineInfo->childMachineInfo);
+        deleteMachineInfo(thisMachineInfo);
+    }
+}
+
+static void addMachineInfoToChain(machineInfo *theInfo, machineInfo *theChain) {
+    theInfo->nextMachineInfo = theChain->nextMachineInfo;
+    theChain->nextMachineInfo = theInfo;
+}
+
+boolean buildAMachine(enum machineTypes bp,
+                      short originX, short originY,
+                      unsigned long requiredMachineFlags) {
+    machineInfo *tempMachineInfo = createMachineInfo(0, 0, 0);
+    if (buildAMachineOrChildMachine(bp, originX, originY, requiredMachineFlags, NULL, NULL, NULL, tempMachineInfo)) {
+        // Transfer the valid machineInfo into the main chain and delete the head node
+        addMachineInfoToChain(tempMachineInfo->nextMachineInfo, allMachineInfo);
+        tempMachineInfo->nextMachineInfo = NULL;
+        deleteMachineInfo(tempMachineInfo);
+        return true;
+    }
+    deleteAllMachineInfo(tempMachineInfo);
+    return false;
+}
+
 // Returns true if the machine got built; false if it was aborted.
 // If empty array parentSpawnedItems or parentSpawnedMonsters is given, will pass those back for deletion if necessary.
-boolean buildAMachine(enum machineTypes bp,
+static boolean buildAMachineOrChildMachine(enum machineTypes bp,
                       short originX, short originY,
                       unsigned long requiredMachineFlags,
                       item *adoptiveItem,
                       item *parentSpawnedItems[MACHINES_BUFFER_LENGTH],
-                      creature *parentSpawnedMonsters[MACHINES_BUFFER_LENGTH]) {
+                      creature *parentSpawnedMonsters[MACHINES_BUFFER_LENGTH],
+                      machineInfo *thisMachineInfoChain) {
 
     short totalFreq, instance, instanceCount = 0,
         itemCount, monsterCount, qualifyingTileCount,
@@ -1244,6 +1302,10 @@ boolean buildAMachine(enum machineTypes bp,
             }
         }
     }
+
+    // Store info about created machine (will be deleted if machine fails)
+    machineInfo *thisMachineInfo = createMachineInfo(rogue.depthLevel, machineNumber, bp);
+    addMachineInfoToChain(thisMachineInfo, thisMachineInfoChain);
 
 //  DEBUG printf("\n\nWorking on blueprint %i, with origin at (%i, %i). Here's the initial interior map:", bp, originX, originY);
 //  DEBUG logBuffer(interior);
@@ -1548,9 +1610,9 @@ boolean buildAMachine(enum machineTypes bp,
                                 removeItemFromChain(theItem, floorItems);
                                 removeItemFromChain(theItem, packItems);
                                 theItem->nextItem = NULL;
-                                success = buildAMachine(-1, -1, -1, BP_ADOPT_ITEM, theItem, p->spawnedItemsSub, p->spawnedMonstersSub);
+                                success = buildAMachineOrChildMachine(-1, -1, -1, BP_ADOPT_ITEM, theItem, p->spawnedItemsSub, p->spawnedMonstersSub, thisMachineInfo->childMachineInfo);
                             } else if (feature->flags & MF_BUILD_VESTIBULE) {
-                                success = buildAMachine(-1, featX, featY, BP_VESTIBULE, NULL, p->spawnedItemsSub, p->spawnedMonstersSub);
+                                success = buildAMachineOrChildMachine(-1, featX, featY, BP_VESTIBULE, NULL, p->spawnedItemsSub, p->spawnedMonstersSub, thisMachineInfo->childMachineInfo);
                             }
 
                             // Now put the item up for adoption.
@@ -1737,7 +1799,7 @@ static void addMachines() {
     // Add the amulet holder if it's depth 26:
     if (rogue.depthLevel == gameConst->amuletLevel) {
         for (failsafe = 50; failsafe; failsafe--) {
-            if (buildAMachine(MT_AMULET_AREA, -1, -1, 0, NULL, NULL, NULL)) {
+            if (buildAMachine(MT_AMULET_AREA, -1, -1, 0)) {
                 break;
             }
         }
@@ -1757,7 +1819,7 @@ static void addMachines() {
     }
 
     for (failsafe = 50; machineCount && failsafe; failsafe--) {
-        if (buildAMachine(-1, -1, -1, BP_REWARD, NULL, NULL, NULL)) {
+        if (buildAMachine(-1, -1, -1, BP_REWARD)) {
             machineCount--;
             rogue.rewardRoomsGenerated++;
         }
@@ -1835,7 +1897,7 @@ static void runAutogenerators(boolean buildAreaMachines) {
                 // Attempt to build the machine if requested.
                 // Machines will find their own locations, so it will not be at the same place as terrain and DF.
                 if (gen->machine > 0) {
-                    buildAMachine(gen->machine, -1, -1, 0, NULL, NULL, NULL);
+                    buildAMachine(gen->machine, -1, -1, 0);
                 }
             }
         }
