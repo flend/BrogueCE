@@ -220,6 +220,7 @@ void initializeRogue(uint64_t seed) {
     rogue.milliseconds = 0;
 
     rogue.meteredItems = calloc(gameConst->numberMeteredItems, sizeof(meteredItem));
+    rogue.featRecord = calloc(gameConst->numberFeats, sizeof(boolean));
     strcpy(rogue.currentGamePath, currentGamePath);
 
     rogue.RNG = RNG_SUBSTANTIVE;
@@ -304,7 +305,7 @@ void initializeRogue(uint64_t seed) {
 
     shuffleFlavors();
 
-    for (i = 0; i < FEAT_COUNT; i++) {
+    for (i = 0; i < gameConst->numberFeats; i++) {
         rogue.featRecord[i] = featTable[i].initialValue;
     }
 
@@ -360,9 +361,8 @@ void initializeRogue(uint64_t seed) {
     initializeGender(&player);
     player.movementSpeed = player.info.movementSpeed;
     player.attackSpeed = player.info.attackSpeed;
-    clearStatus(&player);
+    initializeStatus(&player);
     player.carriedItem = NULL;
-    player.status[STATUS_NUTRITION] = player.maxStatus[STATUS_NUTRITION] = STOMACH_SIZE;
     player.currentHP = player.info.maxHP;
     player.creatureState = MONSTER_ALLY;
     player.ticksUntilTurn = 0;
@@ -841,7 +841,7 @@ void startLevel(short oldLevelNumber, short stairDirection) {
         for (dir=0; dir<4 && !placedPlayer; dir++) {
             loc = posNeighborInDirection(player.loc, dir);
             if (!cellHasTerrainFlag(loc, T_PATHING_BLOCKER)
-                && !(pmapAt(loc)->flags & (HAS_MONSTER | HAS_ITEM | HAS_STAIRS | IS_IN_MACHINE))) {
+                && !(pmapAt(loc)->flags & (HAS_MONSTER | HAS_STAIRS | IS_IN_MACHINE))) {
                 placedPlayer = true;
             }
         }
@@ -850,13 +850,24 @@ void startLevel(short oldLevelNumber, short stairDirection) {
                                      player.loc.x, player.loc.y,
                                      true,
                                      T_DIVIDES_LEVEL, 0,
-                                     T_PATHING_BLOCKER, (HAS_MONSTER | HAS_ITEM | HAS_STAIRS | IS_IN_MACHINE),
+                                     T_PATHING_BLOCKER, (HAS_MONSTER | HAS_STAIRS | IS_IN_MACHINE),
                                      false);
         }
     }
     player.loc = loc;
 
     pmapAt(player.loc)->flags |= HAS_PLAYER;
+
+    // Notify the player if they arrive standing on (or otherwise in the same location as) an item
+    if (itemAtLoc(player.loc)) {
+        item *theItem = itemAtLoc(player.loc);
+        char msg[COLS * 3], itemDescription[COLS * 3] = "";
+        
+        // the message pane wraps so we don't need to limit the description
+        describedItemName(theItem, itemDescription, COLS * 3);
+        sprintf(msg, "Below you lies %s.", itemDescription);
+        messageWithColor(msg, &itemMessageColor, 0);
+    }
 
     if (connectingStairsDiscovered) {
         for (i = rogue.upLoc.x-1; i <= rogue.upLoc.x + 1; i++) {
@@ -942,13 +953,15 @@ static void removeDeadMonstersFromList(creatureList *list) {
         if (decedent->bookkeepingFlags & MB_HAS_DIED) {
             removeCreature(list, decedent);
             if (decedent->leader == &player
-                && !(decedent->info.flags & MONST_INANIMATE)
-                && (decedent->bookkeepingFlags & MB_HAS_SOUL)
+                && !(decedent->bookkeepingFlags & MB_DOES_NOT_RESURRECT)
+                && (!(decedent->info.flags & MONST_INANIMATE) 
+                    || (monsterCatalog[decedent->info.monsterID].abilityFlags & MA_ENTER_SUMMONS))
+                && (decedent->bookkeepingFlags & MB_WEAPON_AUTO_ID)
                 && !(decedent->bookkeepingFlags & MB_ADMINISTRATIVE_DEATH)) {
 
                 // Unset flag, since the purgatory list should be iterable.
                 decedent->bookkeepingFlags &= ~MB_HAS_DIED;
-                prependCreature(&purgatory, decedent);
+                prependCreature(&purgatory, decedent); // add for possible future resurrection
             } else {
                 freeCreature(decedent);
             }
@@ -1023,6 +1036,8 @@ void freeEverything() {
 
     free(levels);
     levels = NULL;
+
+    free(rogue.featRecord);
 }
 
 void gameOver(char *killedBy, boolean useCustomPhrasing) {
@@ -1151,8 +1166,7 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         printString(buf, (COLS - strLenWithoutEscapes(buf)) / 2, ROWS / 2, &gray, &black, 0);
 
         y = ROWS / 2 + 3;
-        for (i = 0; i < FEAT_COUNT; i++) {
-            //printf("\nConduct %i (%s) is %s.", i, featTable[i].name, rogue.featRecord[i] ? "true" : "false");
+        for (i = 0; i < gameConst->numberFeats; i++) {
             if (rogue.featRecord[i]
                 && !featTable[i].initialValue) {
 
@@ -1188,6 +1202,10 @@ void gameOver(char *killedBy, boolean useCustomPhrasing) {
         }
     } else {
         notifyEvent(GAMEOVER_RECORDING, 0, 0, "recording ended", "none");
+    }
+
+    if (!rogue.playbackMode && !rogue.easyMode && !rogue.wizard) {
+        saveRunHistory(rogue.quit ? "Quit" : "Died", rogue.quit ? "-" : killedBy, (int) theEntry.score, numGems);
     }
 
     rogue.gameHasEnded = true;
@@ -1295,7 +1313,7 @@ void victory(boolean superVictory) {
     printString("Achievements", mapToWindowX(2), i++, &lightBlue, &black, NULL);
 
     i++;
-    for (j = 0; i < ROWS && j < FEAT_COUNT; j++) {
+    for (j = 0; i < ROWS && j < gameConst->numberFeats; j++) {
         if (rogue.featRecord[j]) {
             sprintf(buf, "%s: %s", featTable[j].name, featTable[j].description);
             printString(buf, mapToWindowX(2), i, &advancementMessageColor, &black, NULL);
@@ -1328,11 +1346,12 @@ void victory(boolean superVictory) {
     rogue.playbackMode = false;
     rogue.playbackMode = isPlayback;
 
+    displayMoreSign();
+
     if (serverMode) {
-        // There's no save recording prompt, so let the player see achievements.
-        displayMoreSign();
         saveRecordingNoPrompt(recordingFilename);
     } else {
+        blackOutScreen();
         saveRecording(recordingFilename);
         printHighScores(qualified);
     }
@@ -1349,6 +1368,10 @@ void victory(boolean superVictory) {
         }
     } else {
         notifyEvent(GAMEOVER_RECORDING, 0, 0, "recording ended", "none");
+    }
+
+    if (!rogue.playbackMode && !rogue.easyMode && !rogue.wizard) {
+        saveRunHistory(victoryVerb, "-", (int) theEntry.score, gemCount);
     }
 
     rogue.gameHasEnded = true;

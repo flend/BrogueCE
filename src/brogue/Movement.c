@@ -119,13 +119,22 @@ void describedItemBasedOnParameters(short theCategory, short theKind, short theQ
     return;
 }
 
-// Describes the item in question either by naming it if the player has already seen its name,
-// or by tersely identifying its category otherwise.
-static void describedItemName(item *theItem, char *buf) {
+/// @brief Describes an item, primarily as a component of the location description that displays just above the
+/// menu bar at the bottom of the screen. The complete location description needs to fit on a single line the width
+/// of the dungeon, so an attempt is made to fit as much detail as possible within a loose length constraint. If
+/// there is enough room, item details are included. If not, a terse description is used. Note that the final
+/// description may exceed the max length.
+/// @param theItem The item
+/// @param buf The item description
+/// @param maxLength The maximum length of the description
+void describedItemName(const item *theItem, char *description, int maxLength) {
     if (rogue.playbackOmniscience || (!player.status[STATUS_HALLUCINATING])) {
-        itemName(theItem, buf, (theItem->category & (WEAPON | ARMOR) ? false : true), true, NULL);
+        itemName(theItem, description, true, true, NULL);
+        if (strlen(description) > maxLength) {
+            itemName(theItem, description, false, true, NULL);
+        }
     } else {
-        describeHallucinatedItem(buf);
+        describeHallucinatedItem(description);
     }
 }
 
@@ -136,16 +145,20 @@ void describeLocation(char *buf, short x, short y) {
     boolean subjectMoving;
     boolean prepositionLocked = false;
     boolean monsterDormant;
+    boolean monsterIsPlayer = false;
 
     char subject[COLS * 3];
     char verb[COLS * 3];
     char preposition[COLS * 3];
     char object[COLS * 3];
+    char itemLocation[COLS * 3] = "";
     char adjective[COLS * 3];
 
     assureCosmeticRNG;
 
-    if (x == player.loc.x && y == player.loc.y) {
+    theItem = itemAtLoc((pos){ x, y });
+    // describe the player's location when there is no item there
+    if ((x == player.loc.x) && (y == player.loc.y) && !theItem) {
         if (player.status[STATUS_LEVITATING]) {
             sprintf(buf, "you are hovering above %s.", tileText(x, y));
         } else {
@@ -157,10 +170,11 @@ void describeLocation(char *buf, short x, short y) {
 
     monst = NULL;
     standsInTerrain = ((tileCatalog[pmap[x][y].layers[highestPriorityLayer(x, y, false)]].mechFlags & TM_STAND_IN_TILE) ? true : false);
-    theItem = itemAtLoc((pos){ x, y });
     monsterDormant = false;
-    if (pmap[x][y].flags & HAS_MONSTER) {
+    if (pmap[x][y].flags & (HAS_MONSTER | HAS_PLAYER)) {
         monst = monsterAtLoc((pos){ x, y });
+        monsterIsPlayer = (monst == &player);
+
     } else if (pmap[x][y].flags & HAS_DORMANT_MONSTER) {
         monst = dormantMonsterAtLoc((pos){ x, y });
         monsterDormant = true;
@@ -197,6 +211,7 @@ void describeLocation(char *buf, short x, short y) {
 
     // telepathy
     if (monst
+        && !monsterIsPlayer
         && !canSeeMonster(monst)
         && monsterRevealed(monst)) {
 
@@ -256,8 +271,9 @@ void describeLocation(char *buf, short x, short y) {
     if (monst) {
 
         monsterName(subject, monst, true);
+        strcpy(verb, monsterIsPlayer ? "are" : "is");
 
-        if (pmap[x][y].layers[GAS] && monst->status[STATUS_INVISIBLE]) { // phantoms in gas
+        if (pmap[x][y].layers[GAS] && monst->status[STATUS_INVISIBLE] && !monsterIsPlayer) { // phantoms in gas
             sprintf(buf, "you can perceive the faint outline of %s in %s.", subject, tileCatalog[pmap[x][y].layers[GAS]].description);
             restoreRNG;
             return;
@@ -269,60 +285,60 @@ void describeLocation(char *buf, short x, short y) {
                          && !(monst->bookkeepingFlags & (MB_SEIZED | MB_CAPTIVE)));
         if ((monst->info.flags & MONST_ATTACKABLE_THRU_WALLS)
             && cellHasTerrainFlag((pos){ x, y }, T_OBSTRUCTS_PASSABILITY)) {
-            strcpy(verb, "is embedded");
+            strcat(verb, " embedded");
         } else if (cellHasTerrainFlag((pos){ x, y }, T_OBSTRUCTS_PASSABILITY)) {
-            strcpy(verb, "is trapped");
+            strcat(verb, " trapped");
             subjectMoving = false;
         } else if (monst->bookkeepingFlags & MB_CAPTIVE) {
-            strcpy(verb, "is shackled in place");
+            strcat(verb, " shackled in place");
             subjectMoving = false;
         } else if (monst->status[STATUS_PARALYZED]) {
-            strcpy(verb, "is frozen in place");
+            strcat(verb, " frozen in place");
             subjectMoving = false;
         } else if (monst->status[STATUS_STUCK]) {
-            strcpy(verb, "is entangled");
+            strcat(verb, " entangled");
             subjectMoving = false;
         } else if (monst->status[STATUS_LEVITATING]) {
-            strcpy(verb, (subjectMoving ? "is flying" : "is hovering"));
-            strcpy(preposition, "over");
+            strcat(verb, (monsterIsPlayer ? " hovering" : (subjectMoving ? " flying" : " hovering")));
+            strcat(preposition, "over");
             prepositionLocked = true;
         } else if (monsterCanSubmergeNow(monst)) {
-            strcpy(verb, (subjectMoving ? "is gliding" : "is drifting"));
+            strcat(verb, (subjectMoving ? " gliding" : " drifting"));
         } else if (cellHasTerrainFlag((pos){ x, y }, T_MOVES_ITEMS) && !(monst->info.flags & MONST_SUBMERGES)) {
-            strcpy(verb, (subjectMoving ? "is swimming" : "is struggling"));
+            strcat(verb, (subjectMoving ? " swimming" : " struggling"));
         } else if (cellHasTerrainFlag((pos){ x, y }, T_AUTO_DESCENT)) {
-            strcpy(verb, "is suspended in mid-air");
-            strcpy(preposition, "over");
+            strcat(verb, " suspended in mid-air");
+            strcat(preposition, "over");
             prepositionLocked = true;
             subjectMoving = false;
         } else if (monst->status[STATUS_CONFUSED]) {
-            strcpy(verb, "is staggering");
+            strcat(verb, " staggering");
         } else if ((monst->info.flags & MONST_RESTRICTED_TO_LIQUID)
-                   && !cellHasTMFlag(monst->loc.x, monst->loc.y, TM_ALLOWS_SUBMERGING)) {
-            strcpy(verb, "is lying");
+                   && !cellHasTMFlag(monst->loc, TM_ALLOWS_SUBMERGING)) {
+            strcat(verb, " lying");
             subjectMoving = false;
         } else if (monst->info.flags & MONST_IMMOBILE) {
-            strcpy(verb, "is resting");
+            strcat(verb, " resting");
         } else {
             switch (monst->creatureState) {
                 case MONSTER_SLEEPING:
-                    strcpy(verb, "is sleeping");
+                    strcat(verb, " sleeping");
                     subjectMoving = false;
                     break;
                 case MONSTER_WANDERING:
-                    strcpy(verb, subjectMoving ? "is wandering" : "is standing");
+                    strcat(verb, subjectMoving ? " wandering" : " standing");
                     break;
                 case MONSTER_FLEEING:
-                    strcpy(verb, subjectMoving ? "is fleeing" : "is standing");
+                    strcat(verb, subjectMoving ? " fleeing" : " standing");
                     break;
                 case MONSTER_TRACKING_SCENT:
-                    strcpy(verb, subjectMoving ? "is charging" : "is standing");
+                    strcat(verb, subjectMoving ? " charging" : " standing");
                     break;
                 case MONSTER_ALLY:
-                    strcpy(verb, subjectMoving ? "is following you" : "is standing");
+                    strcat(verb, monsterIsPlayer ? " standing" : (subjectMoving ? " following you" : " standing"));
                     break;
                 default:
-                    strcpy(verb, "is standing");
+                    strcat(verb, " standing");
                     break;
             }
         }
@@ -332,7 +348,13 @@ void describeLocation(char *buf, short x, short y) {
 
         if (theItem) {
             strcpy(preposition, "over");
-            describedItemName(theItem, object);
+            if (monsterIsPlayer) {
+                strcat(itemLocation, standsInTerrain ? " in " : " on ");
+                strcat(itemLocation, tileText(x, y));
+            }
+            sprintf(buf, "%s %s %s %s%s.", subject, verb, preposition, object, itemLocation);
+            describedItemName(theItem, object, DCOLS - strlen(buf));
+
         } else {
             if (!prepositionLocked) {
                 strcpy(preposition, subjectMoving ? (standsInTerrain ? "through" : "across")
@@ -345,7 +367,6 @@ void describeLocation(char *buf, short x, short y) {
     } else { // no monster
         strcpy(object, tileText(x, y));
         if (theItem) {
-            describedItemName(theItem, subject);
             subjectMoving = cellHasTerrainFlag((pos){ x, y }, T_MOVES_ITEMS);
             if (player.status[STATUS_HALLUCINATING] && !rogue.playbackOmniscience) {
                 strcpy(verb, "is");
@@ -360,6 +381,8 @@ void describeLocation(char *buf, short x, short y) {
             strcpy(preposition, standsInTerrain ? (subjectMoving ? "through" : "in")
                    : (subjectMoving ? "across" : "on"));
 
+            sprintf(buf, "%s %s %s %s%s.", subject, verb, preposition, object, itemLocation);
+            describedItemName(theItem, subject, DCOLS - strlen(buf));
 
         } else { // no item
             sprintf(buf, "you %s %s.", (playerCanDirectlySee(x, y) ? "see" : "sense"), object);
@@ -368,7 +391,7 @@ void describeLocation(char *buf, short x, short y) {
         }
     }
 
-    sprintf(buf, "%s %s %s %s.", subject, verb, preposition, object);
+    sprintf(buf, "%s %s %s %s%s.", subject, verb, preposition, object, itemLocation);
     restoreRNG;
 }
 
@@ -526,16 +549,15 @@ boolean freeCaptivesEmbeddedAt(short x, short y) {
     return false;
 }
 
-// Do we need confirmation so we don't accidently hit an acid mound?
-static boolean abortAttackAgainstAcidicTarget(creature *hitList[8]) {
+/// @brief Ask the player for confirmation before attacking an acidic monster
+/// @param hitList the creature(s) getting attacked
+/// @return true to abort the attack
+static boolean abortAttackAgainstAcidicTarget(const creature *hitList[8]) {
     short i;
     char monstName[COLS], weaponName[COLS];
     char buf[COLS*3];
 
-    if (rogue.weapon
-        && !(rogue.weapon->flags & ITEM_PROTECTED)
-        && !player.status[STATUS_HALLUCINATING]
-        && !player.status[STATUS_CONFUSED]) {
+    if (rogue.weapon && !(rogue.weapon->flags & ITEM_PROTECTED)) {
 
         for (i=0; i<8; i++) {
             if (hitList[i]
@@ -560,14 +582,60 @@ static boolean abortAttackAgainstAcidicTarget(creature *hitList[8]) {
     return false;
 }
 
+/// @brief Ask the player for confirmation before attacking a discordant ally
+/// @param hitList the creature(s) getting attacked
+/// @return true to abort the attack
+static boolean abortAttackAgainstDiscordantAlly(const creature *hitList[8]) {
+
+    for (int i=0; i<8; i++) {
+        if (hitList[i]
+            && hitList[i]->creatureState == MONSTER_ALLY
+            && hitList[i]->status[STATUS_DISCORDANT]
+            && canSeeMonster(hitList[i])) {
+
+            char monstName[COLS], buf[COLS*3];
+            monsterName(monstName, hitList[i], true);
+            sprintf(buf, "Are you sure you want to attack %s?", monstName);
+            if (confirm(buf, false)) {
+                return false; // Don't abort. Attack the ally.
+            } else {
+                return true; // Abort!
+            }
+        }
+    }
+    return false; // the confirmation dialog was not shown
+}
+
+/// @brief Determines if a player attack against the given creature(s) should be aborted. A confirmation
+/// dialog is shown when attempting to attack an acidic monster or discordant ally, unless confused or
+/// hallucinating (but not telepathic).
+/// @param hitList the creature(s) getting attacked
+/// @return true to abort the attack
+static boolean abortAttack(const creature *hitList[8]) {
+
+    // too bad so sad if you're confused or hallucinating (but not telepathic)
+    if (player.status[STATUS_CONFUSED]
+        || (player.status[STATUS_HALLUCINATING] && !player.status[STATUS_TELEPATHIC])) {
+        return false;
+    }
+
+    if (abortAttackAgainstAcidicTarget(hitList)
+        || abortAttackAgainstDiscordantAlly(hitList)) {
+        return true;
+    }
+
+    return false; // either the player confirmed the attack or the confirmation dialog was not shown
+}
+
 // Returns true if a whip attack was launched.
 // If "aborted" pointer is provided, sets it to true if it was aborted because
-// the player opted not to attack an acid mound (in which case the whole turn
+// the player opted not to attack (in which case the whole turn
 // should be aborted), as opposed to there being no valid whip attack available
 // (in which case the player/monster should move instead).
 boolean handleWhipAttacks(creature *attacker, enum directions dir, boolean *aborted) {
     bolt theBolt;
-    creature *defender, *hitList[8] = {0};
+    creature *defender;
+    const creature *hitList[8] = {0};
 
     const char boltChar[DIRECTION_COUNT] = "||~~\\//\\";
 
@@ -582,6 +650,13 @@ boolean handleWhipAttacks(creature *attacker, enum directions dir, boolean *abor
     }
     pos originLoc = attacker->loc;
     pos targetLoc = posNeighborInDirection(attacker->loc, dir);
+
+    // The neighboring position in the attack direction must not be diagonally blocked.
+    // Generally speaking, the attacker must be able to move one tile in the attack direction.
+    if (diagonalBlocked(originLoc.x, originLoc.y, targetLoc.x, targetLoc.y, attacker == &player)) {
+        return false;
+    }
+
     pos strikeLoc;
     getImpactLoc(&strikeLoc, originLoc, targetLoc, 5, false, &boltCatalog[BOLT_WHIP]);
 
@@ -593,7 +668,7 @@ boolean handleWhipAttacks(creature *attacker, enum directions dir, boolean *abor
 
         if (attacker == &player) {
             hitList[0] = defender;
-            if (abortAttackAgainstAcidicTarget(hitList)) {
+            if (abortAttack(hitList)) {
                 if (aborted) {
                     *aborted = true;
                 }
@@ -611,11 +686,12 @@ boolean handleWhipAttacks(creature *attacker, enum directions dir, boolean *abor
 
 // Returns true if a spear attack was launched.
 // If "aborted" pointer is provided, sets it to true if it was aborted because
-// the player opted not to attack an acid mound (in which case the whole turn
+// the player opted not to attack (in which case the whole turn
 // should be aborted), as opposed to there being no valid spear attack available
 // (in which case the player/monster should move instead).
 boolean handleSpearAttacks(creature *attacker, enum directions dir, boolean *aborted) {
-    creature *defender, *hitList[8] = {0};
+    creature *defender;
+    const creature *hitList[8] = {0};
     short range = 2, i = 0, h = 0;
     boolean proceed = false, visualEffect = false;
 
@@ -628,6 +704,13 @@ boolean handleSpearAttacks(creature *attacker, enum directions dir, boolean *abo
             return false;
         }
     } else if (!(attacker->info.abilityFlags & MA_ATTACKS_PENETRATE)) {
+        return false;
+    }
+
+    // The neighboring position in the attack direction must not be diagonally blocked
+    // Generally speaking, the attacker must be able to move one tile in the attack direction.
+    pos neighborLoc = posNeighborInDirection(attacker->loc, dir);
+    if (diagonalBlocked(attacker->loc.x, attacker->loc.y, neighborLoc.x, neighborLoc.y, attacker == &player)) {
         return false;
     }
 
@@ -668,7 +751,7 @@ boolean handleSpearAttacks(creature *attacker, enum directions dir, boolean *abo
     range = i;
     if (proceed) {
         if (attacker == &player) {
-            if (abortAttackAgainstAcidicTarget(hitList)) {
+            if (abortAttack(hitList)) {
                 if (aborted) {
                     *aborted = true;
                 }
@@ -712,7 +795,7 @@ boolean handleSpearAttacks(creature *attacker, enum directions dir, boolean *abo
     return false;
 }
 
-static void buildFlailHitList(const short x, const short y, const short newX, const short newY, creature *hitList[16]) {
+static void buildFlailHitList(const short x, const short y, const short newX, const short newY, const creature *hitList[16]) {
     short mx, my;
     short i = 0;
 
@@ -759,7 +842,8 @@ boolean playerMoves(short direction) {
     short x = player.loc.x, y = player.loc.y;
     short newX, newY, newestX, newestY;
     boolean playerMoved = false, specialAttackAborted = false, anyAttackHit = false;
-    creature *defender = NULL, *tempMonst = NULL, *hitList[16] = {NULL};
+    creature *defender = NULL, *tempMonst = NULL;
+    const creature *hitList[16] = {NULL};
     char monstName[COLS];
     char buf[COLS*3];
     const int directionKeys[8] = {UP_KEY, DOWN_KEY, LEFT_KEY, RIGHT_KEY, UPLEFT_KEY, DOWNLEFT_KEY, UPRIGHT_KEY, DOWNRIGHT_KEY};
@@ -828,7 +912,7 @@ boolean playerMoves(short direction) {
         || (!canSeeMonster(defender) && !monsterRevealed(defender))
         || !monstersAreEnemies(&player, defender)) {
 
-        if (cellHasTerrainFlag((pos){ newX, newY }, T_OBSTRUCTS_PASSABILITY) && cellHasTMFlag(newX, newY, TM_PROMOTES_ON_PLAYER_ENTRY)) {
+        if (cellHasTerrainFlag((pos){ newX, newY }, T_OBSTRUCTS_PASSABILITY) && cellHasTMFlag((pos){ newX, newY }, TM_PROMOTES_ON_PLAYER_ENTRY)) {
             layer = layerWithTMFlag(newX, newY, TM_PROMOTES_ON_PLAYER_ENTRY);
             if (tileCatalog[pmap[newX][newY].layers[layer]].flags & T_OBSTRUCTS_PASSABILITY) {
                 committed = true;
@@ -841,9 +925,9 @@ boolean playerMoves(short direction) {
 
     }
 
-    if (((!cellHasTerrainFlag((pos){ newX, newY }, T_OBSTRUCTS_PASSABILITY) || (cellHasTMFlag(newX, newY, TM_PROMOTES_WITH_KEY) && keyInPackFor((pos){ newX, newY })))
+    if (((!cellHasTerrainFlag((pos){ newX, newY }, T_OBSTRUCTS_PASSABILITY) || (cellHasTMFlag((pos){ newX, newY }, TM_PROMOTES_WITH_KEY) && keyInPackFor((pos){ newX, newY })))
          && !diagonalBlocked(x, y, newX, newY, false)
-         && (!cellHasTerrainFlag((pos){ x, y }, T_OBSTRUCTS_PASSABILITY) || (cellHasTMFlag(x, y, TM_PROMOTES_WITH_KEY) && keyInPackFor((pos){ x, y }))))
+         && (!cellHasTerrainFlag((pos){ x, y }, T_OBSTRUCTS_PASSABILITY) || (cellHasTMFlag((pos){ x, y }, TM_PROMOTES_WITH_KEY) && keyInPackFor((pos){ x, y }))))
         || (defender && defender->info.flags & MONST_ATTACKABLE_THRU_WALLS)) {
         // if the move is not blocked
 
@@ -855,7 +939,7 @@ boolean playerMoves(short direction) {
             moveEntrancedMonsters(direction);
             playerTurnEnded();
             return true;
-        } else if (specialAttackAborted) { // Canceled an attack against an acid mound.
+        } else if (specialAttackAborted) { // Canceled an attack against an acidic monster or discordant ally
             brogueAssert(!committed);
             cancelKeystroke();
             rogue.disturbed = true;
@@ -870,7 +954,7 @@ boolean playerMoves(short direction) {
                 sprintf(buf, "Free the captive %s?", monstName);
                 if (committed || confirm(buf, false)) {
                     committed = true;
-                    if (cellHasTMFlag(newX, newY, TM_PROMOTES_WITH_KEY) && keyInPackFor((pos){ newX, newY })) {
+                    if (cellHasTMFlag((pos){ newX, newY }, TM_PROMOTES_WITH_KEY) && keyInPackFor((pos){ newX, newY })) {
                         useKeyAt(keyInPackFor((pos){ newX, newY }), newX, newY);
                     }
                     freeCaptive(defender);
@@ -883,7 +967,7 @@ boolean playerMoves(short direction) {
                 }
             }
 
-            if (defender->creatureState != MONSTER_ALLY) {
+            if (defender->creatureState != MONSTER_ALLY || defender->status[STATUS_DISCORDANT]) {
                 // Make a hit list of monsters the player is attacking this turn.
                 // We separate this tallying phase from the actual attacking phase because sometimes the attacks themselves
                 // create more monsters, and those shouldn't be attacked in the same turn.
@@ -891,7 +975,7 @@ boolean playerMoves(short direction) {
                 buildHitList(hitList, &player, defender,
                              rogue.weapon && (rogue.weapon->flags & ITEM_ATTACKS_ALL_ADJACENT));
 
-                if (abortAttackAgainstAcidicTarget(hitList)) { // Acid mound attack confirmation.
+                if (abortAttack(hitList)) {
                     brogueAssert(!committed);
                     cancelKeystroke();
                     rogue.disturbed = true;
@@ -964,7 +1048,7 @@ boolean playerMoves(short direction) {
             && cellHasTerrainFlag((pos){ newX, newY }, T_LAVA_INSTA_DEATH)
             && player.status[STATUS_IMMUNE_TO_FIRE] <= 1
             && !cellHasTerrainFlag((pos){ newX, newY }, T_ENTANGLES)
-            && !cellHasTMFlag(newX, newY, TM_IS_SECRET)) {
+            && !cellHasTMFlag((pos){ newX, newY }, TM_IS_SECRET)) {
             message("that would be certain death!", 0);
             brogueAssert(!committed);
             cancelKeystroke();
@@ -974,8 +1058,8 @@ boolean playerMoves(short direction) {
                    && player.status[STATUS_LEVITATING] <= 1
                    && !player.status[STATUS_CONFUSED]
                    && cellHasTerrainFlag((pos){ newX, newY }, T_AUTO_DESCENT)
-                   && (!cellHasTerrainFlag((pos){ newX, newY }, T_ENTANGLES) || cellHasTMFlag(newX, newY, TM_PROMOTES_ON_PLAYER_ENTRY))
-                   && !cellHasTMFlag(newX, newY, TM_IS_SECRET)
+                   && (!cellHasTerrainFlag((pos){ newX, newY }, T_ENTANGLES) || cellHasTMFlag((pos){ newX, newY }, TM_PROMOTES_ON_PLAYER_ENTRY))
+                   && !cellHasTMFlag((pos){ newX, newY }, TM_IS_SECRET)
                    && !confirm("Dive into the depths?", false)) {
 
             brogueAssert(!committed);
@@ -987,7 +1071,7 @@ boolean playerMoves(short direction) {
                    && !player.status[STATUS_BURNING]
                    && player.status[STATUS_IMMUNE_TO_FIRE] <= 1
                    && cellHasTerrainFlag((pos){ newX, newY }, T_IS_FIRE)
-                   && !cellHasTMFlag(newX, newY, TM_EXTINGUISHES_FIRE)
+                   && !cellHasTMFlag((pos){ newX, newY }, TM_EXTINGUISHES_FIRE)
                    && !confirm("Venture into flame?", false)) {
 
             brogueAssert(!committed);
@@ -1010,11 +1094,11 @@ boolean playerMoves(short direction) {
                    && !player.status[STATUS_CONFUSED]
                    && cellHasTerrainFlag((pos){ newX, newY }, T_IS_DF_TRAP)
                    && !(pmap[newX][newY].flags & PRESSURE_PLATE_DEPRESSED)
-                   && !cellHasTMFlag(newX, newY, TM_IS_SECRET)
+                   && !cellHasTMFlag((pos){ newX, newY }, TM_IS_SECRET)
                    && (!rogue.armor || !(rogue.armor->flags & ITEM_RUNIC) || !(rogue.armor->flags & ITEM_RUNIC_IDENTIFIED) || rogue.armor->enchant2 != A_RESPIRATION ||
-                        (!cellHasTerrainType(newX, newY, GAS_TRAP_POISON)
-                         && !cellHasTerrainType(newX, newY, GAS_TRAP_PARALYSIS)
-                         && !cellHasTerrainType(newX, newY, GAS_TRAP_CONFUSION)))
+                        (!cellHasTerrainType((pos){ newX, newY }, GAS_TRAP_POISON)
+                         && !cellHasTerrainType((pos){ newX, newY }, GAS_TRAP_PARALYSIS)
+                         && !cellHasTerrainType((pos){ newX, newY }, GAS_TRAP_CONFUSION)))
                    && !confirm("Step onto the pressure plate?", false)) {
 
             brogueAssert(!committed);
@@ -1035,7 +1119,7 @@ boolean playerMoves(short direction) {
                     && (!cellHasTerrainFlag(tempMonst->loc, T_OBSTRUCTS_PASSABILITY) || (tempMonst->info.flags & MONST_ATTACKABLE_THRU_WALLS))) {
 
                     hitList[0] = tempMonst;
-                    if (abortAttackAgainstAcidicTarget(hitList)) { // Acid mound attack confirmation.
+                    if (abortAttack(hitList)) {
                         brogueAssert(!committed);
                         cancelKeystroke();
                         rogue.disturbed = true;
@@ -1046,7 +1130,7 @@ boolean playerMoves(short direction) {
         }
         if (rogue.weapon && (rogue.weapon->flags & ITEM_PASS_ATTACKS)) {
             buildFlailHitList(x, y, newX, newY, hitList);
-            if (abortAttackAgainstAcidicTarget(hitList)) { // Acid mound attack confirmation.
+            if (abortAttack(hitList)) {
                 brogueAssert(!committed);
                 cancelKeystroke();
                 rogue.disturbed = true;
@@ -1143,7 +1227,7 @@ boolean playerMoves(short direction) {
     } else if (cellHasTerrainFlag((pos){ newX, newY }, T_OBSTRUCTS_PASSABILITY)) {
         i = pmap[newX][newY].layers[layerWithFlag(newX, newY, T_OBSTRUCTS_PASSABILITY)];
         if ((tileCatalog[i].flags & T_OBSTRUCTS_PASSABILITY)
-            && (!diagonalBlocked(x, y, newX, newY, false) || !cellHasTMFlag(newX, newY, TM_PROMOTES_WITH_KEY))) {
+            && (!diagonalBlocked(x, y, newX, newY, false) || !cellHasTMFlag((pos){ newX, newY }, TM_PROMOTES_WITH_KEY))) {
 
             if (!(pmap[newX][newY].flags & DISCOVERED)) {
                 committed = true;
@@ -1651,7 +1735,7 @@ void populateGenericCostMap(short **costMap) {
     for (i=0; i<DCOLS; i++) {
         for (j=0; j<DROWS; j++) {
             if (cellHasTerrainFlag((pos){ i, j }, T_OBSTRUCTS_PASSABILITY)
-                && (!cellHasTMFlag(i, j, TM_IS_SECRET) || (discoveredTerrainFlagsAtLoc((pos){ i, j }) & T_OBSTRUCTS_PASSABILITY))) {
+                && (!cellHasTMFlag((pos){ i, j }, TM_IS_SECRET) || (discoveredTerrainFlagsAtLoc((pos){ i, j }) & T_OBSTRUCTS_PASSABILITY))) {
 
                 costMap[i][j] = cellHasTerrainFlag((pos){ i, j }, T_OBSTRUCTS_DIAGONAL_MOVEMENT) ? PDS_OBSTRUCTION : PDS_FORBIDDEN;
             } else if (cellHasTerrainFlag((pos){ i, j }, T_PATHING_BLOCKER & ~T_OBSTRUCTS_PASSABILITY)) {
@@ -1710,7 +1794,7 @@ void populateCreatureCostMap(short **costMap, creature *monst) {
             getLocationFlags(i, j, &tFlags, NULL, &cFlags, monst == &player);
 
             if ((tFlags & T_OBSTRUCTS_PASSABILITY)
-                 && (!cellHasTMFlag(i, j, TM_IS_SECRET) || (discoveredTerrainFlagsAtLoc((pos){ i, j }) & T_OBSTRUCTS_PASSABILITY) || monst == &player)) {
+                 && (!cellHasTMFlag((pos){ i, j }, TM_IS_SECRET) || (discoveredTerrainFlagsAtLoc((pos){ i, j }) & T_OBSTRUCTS_PASSABILITY) || monst == &player)) {
 
                 costMap[i][j] = (tFlags & T_OBSTRUCTS_DIAGONAL_MOVEMENT) ? PDS_OBSTRUCTION : PDS_FORBIDDEN;
                 continue;
@@ -1767,7 +1851,7 @@ void populateCreatureCostMap(short **costMap, creature *monst) {
 
             if (!(monst->info.flags & MONST_INVULNERABLE)) {
                 if ((tFlags & T_CAUSES_NAUSEA)
-                    || cellHasTMFlag(i, j, TM_PROMOTES_ON_ITEM_PICKUP)
+                    || cellHasTMFlag((pos){ i, j }, TM_PROMOTES_ON_ITEM_PICKUP)
                     || (tFlags & T_ENTANGLES) && !(monst->info.flags & MONST_IMMUNE_TO_WEBS)) {
 
                     costMap[i][j] += 20;
@@ -1939,7 +2023,7 @@ boolean explore(short frameDelay) {
         } else {
             madeProgress = true;
             if (pauseAnimation(frameDelay, PAUSE_BEHAVIOR_DEFAULT)) {
-                
+
                 rogue.disturbed = true;
                 rogue.autoPlayingLevel = false;
             }
@@ -2025,7 +2109,7 @@ boolean isDisturbed(short x, short y) {
 void discover(short x, short y) {
     enum dungeonLayers layer;
     dungeonFeature *feat;
-    if (cellHasTMFlag(x, y, TM_IS_SECRET)) {
+    if (cellHasTMFlag((pos){ x, y }, TM_IS_SECRET)) {
 
         for (layer = 0; layer < NUMBER_TERRAIN_LAYERS; layer++) {
             if (tileCatalog[pmap[x][y].layers[layer]].mechFlags & TM_IS_SECRET) {
@@ -2064,7 +2148,7 @@ boolean search(short searchStrength) {
                     pmap[i][j].flags |= KNOWN_TO_BE_TRAP_FREE;
                 }
                 percent = min(percent, 100);
-                if (cellHasTMFlag(i, j, TM_IS_SECRET)) {
+                if (cellHasTMFlag((pos){ i, j }, TM_IS_SECRET)) {
                     if (rand_percent(percent)) {
                         discover(i, j);
                         foundSomething = true;
@@ -2178,7 +2262,7 @@ void updateFieldOfViewDisplay(boolean updateDancingTerrain, boolean refreshDispl
                         }
                     }
                     if (!(pmap[i][j].flags & MAGIC_MAPPED)
-                        && cellHasTMFlag(i, j, TM_INTERRUPT_EXPLORATION_WHEN_SEEN)) {
+                        && cellHasTMFlag((pos){ i, j }, TM_INTERRUPT_EXPLORATION_WHEN_SEEN)) {
 
                         strcpy(name, tileCatalog[pmap[i][j].layers[layerWithTMFlag(i, j, TM_INTERRUPT_EXPLORATION_WHEN_SEEN)]].description);
                         sprintf(buf, "you see %s.", name);
