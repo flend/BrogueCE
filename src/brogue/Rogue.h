@@ -2525,7 +2525,6 @@ typedef struct playerCharacter {
     // metered items
     long long foodSpawned;              // amount of nutrition units spawned so far this game
     meteredItem *meteredItems;
-    int bonusWeaponsSpawned;            // BULLET_BROGUE only
 
     // ring bonuses:
     short clairvoyance;
@@ -2596,7 +2595,7 @@ enum machineFeatureFlags {
     MF_ALTERNATIVE_2                = Fl(17),   // same as MF_ALTERNATIVE, but provides for a second set of alternatives of which only one will be chosen
     MF_REQUIRE_GOOD_RUNIC           = Fl(18),   // generated item must be uncursed runic
     MF_MONSTERS_DORMANT             = Fl(19),   // monsters are dormant, and appear when a dungeon feature with DFF_ACTIVATE_DORMANT_MONSTER spawns on their tile
-    // unused                       = Fl(20),   //
+    MF_REQUIRE_HEAVY_WEAPON         = Fl(20),   // requires a heavy weapon
     MF_BUILD_IN_WALLS               = Fl(21),   // build in an impassable tile that is adjacent to the interior
     MF_BUILD_ANYWHERE_ON_LEVEL      = Fl(22),   // build anywhere on the level that is not inside the machine
     MF_REPEAT_UNTIL_NO_PROGRESS     = Fl(23),   // keep trying to build this feature set until no changes are made
@@ -2666,6 +2665,7 @@ enum machineTypes {
     MT_REWARD_CONSUMABLES,
     MT_REWARD_PEDESTALS_PERMANENT,
     MT_REWARD_PEDESTALS_CONSUMABLE,
+    MT_REWARD_HEAVY_OR_RUNIC_WEAPON,
     MT_REWARD_COMMUTATION_ALTARS,
     MT_REWARD_RESURRECTION_ALTAR,
     MT_REWARD_ADOPTED_ITEM,
@@ -3308,6 +3308,7 @@ extern "C" {
     item *generateItem(unsigned short theCategory, short theKind);
     short chooseKind(const itemTable *theTable, short numKinds);
     item *makeItemInto(item *theItem, unsigned long itemCategory, short itemKind);
+    boolean itemIsHeavyWeapon(const item *theItem);
     void updateEncumbrance(void);
     short displayedArmorValue(void);
     short armorValueIfUnenchanted(item *theItem);

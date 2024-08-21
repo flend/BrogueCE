@@ -163,6 +163,14 @@ static boolean itemIsThrowingWeapon(const item *theItem) {
     return false;
 }
 
+boolean itemIsHeavyWeapon(const item *theItem) {
+    if (theItem && theItem->category == WEAPON && !itemIsThrowingWeapon(theItem)
+        && weaponTable[theItem->kind].strengthRequired >= 15) {
+        return true;
+    }
+    return false;
+}
+
 // Sets an item to the given type and category (or chooses randomly if -1) with all other stats
 item *makeItemInto(item *theItem, unsigned long itemCategory, short itemKind) {
     const itemTable *theEntry = NULL;
@@ -683,10 +691,6 @@ void populateItems(pos upstairs) {
             }
         } else if (rogue.depthLevel > gameConst->amuletLevel) {
             theCategory = GEM;
-        } else if (gameVariant == VARIANT_BULLET_BROGUE && rogue.depthLevel < 3 && rogue.bonusWeaponsSpawned < rogue.depthLevel) {
-            theCategory = WEAPON;
-            rogue.bonusWeaponsSpawned++;
-            if (D_MESSAGE_ITEM_GENERATION) printf("\n(!l) Depth %i: spawning bonus weapon", rogue.depthLevel);
         } else {
             for (int j = 0; j < gameConst->numberMeteredItems; j++) {
                 // Create any metered items that reach generation thresholds

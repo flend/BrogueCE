@@ -1506,6 +1506,7 @@ boolean buildAMachine(enum machineTypes bp,
                             while ((theItem->flags & ITEM_CURSED)
                                    || ((feature->flags & MF_REQUIRE_GOOD_RUNIC) && (!(theItem->flags & ITEM_RUNIC))) // runic if requested
                                    || ((feature->flags & MF_NO_THROWING_WEAPONS) && theItem->category == WEAPON && theItem->quantity > 1) // no throwing weapons if prohibited
+                                   || ((feature->flags & MF_REQUIRE_HEAVY_WEAPON) && !itemIsHeavyWeapon(theItem)) // must be a heavy weapon
                                    || itemIsADuplicate(theItem, p->spawnedItems, itemCount)) { // don't want to duplicates of rings, staffs, etc.
                                 deleteItem(theItem);
                                 theItem = generateItem(feature->itemCategory, feature->itemKind);
@@ -1733,6 +1734,15 @@ static void addMachines() {
     short randomMachineFactor;
 
     analyzeMap(true);
+
+    // For bullet brogue, add a guaranteed weapon vault on l1
+    if (gameVariant == VARIANT_BULLET_BROGUE && rogue.depthLevel == 1) {
+        for (failsafe = 50; failsafe; failsafe--) {
+            if (buildAMachine(MT_REWARD_HEAVY_OR_RUNIC_WEAPON, -1, -1, 0, NULL, NULL, NULL)) {
+                break;
+            }
+        }
+    }
 
     // Add the amulet holder if it's depth 26:
     if (rogue.depthLevel == gameConst->amuletLevel) {
