@@ -140,7 +140,7 @@ const autoGenerator autoGeneratorCatalog_BulletBrogue[] = {
     {NET_TRAP_HIDDEN,           DUNGEON,0,                          0,                          FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  20,     100,    0,          3},
     {0,                         0,      0,                          MT_PARALYSIS_TRAP_HIDDEN_AREA, FLOOR,   NOTHING,    2,      DEEPEST_LEVEL,  20,     100,    0,          3},
     {ALARM_TRAP_HIDDEN,         DUNGEON,0,                          0,                          FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  20,     100,    0,          2},
-    {TRAP_DOOR_HIDDEN,          DUNGEON,0,                          0,                          FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  20,     100,    0,          2},
+    {TRAP_DOOR_HIDDEN,          DUNGEON,0,                          0,                          FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  20,     0,      0,          2},
     {GAS_TRAP_CONFUSION_HIDDEN, DUNGEON,0,                          0,                          FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  20,     100,    0,          3},
     {FLAMETHROWER_HIDDEN,       DUNGEON,0,                          0,                          FLOOR,      NOTHING,    3,      DEEPEST_LEVEL,  20,     100,    0,          3},
     {FLOOD_TRAP_HIDDEN,         DUNGEON,0,                          0,                          FLOOR,      NOTHING,    3,      DEEPEST_LEVEL,  20,     100,    0,          3},
@@ -158,15 +158,15 @@ const autoGenerator autoGeneratorCatalog_BulletBrogue[] = {
 
     // Flavor machines
     {0,                         0,      DF_LUMINESCENT_FUNGUS,      0,                          FLOOR,      NOTHING,    DEEPEST_LEVEL,DEEPEST_LEVEL,100,0,      0,          200},
-    {0,                         0,      0,                          MT_BLOODFLOWER_AREA,        FLOOR,      NOTHING,    1,      7,              25,     160,    -20,        3},
-    {0,                         0,      0,                          MT_SHRINE_AREA,             FLOOR,      NOTHING,    1,      AMULET_LEVEL,   7,      0,      0,          1},
+    {0,                         0,      0,                          MT_BLOODFLOWER_AREA,        FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  25,     160,    -20,        3},
+    {0,                         0,      0,                          MT_SHRINE_AREA,             FLOOR,      NOTHING,    1,      AMULET_LEVEL,   15,      0,      0,          1},
     {0,                         0,      0,                          MT_IDYLL_AREA,              FLOOR,      NOTHING,    1,      2,              15,     0,      0,          1},
-    {0,                         0,      0,                          MT_REMNANT_AREA,            FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  15,     0,      0,          2},
-    {0,                         0,      0,                          MT_DISMAL_AREA,             FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  12,     0,      0,          5},
-    {0,                         0,      0,                          MT_BRIDGE_TURRET_AREA,      FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  6,      0,      0,          2},
-    {0,                         0,      0,                          MT_LAKE_PATH_TURRET_AREA,   FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  6,      0,      0,          2},
-    {0,                         0,      0,                          MT_TRICK_STATUE_AREA,       FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  15,     0,      0,          3},
-    {0,                         0,      0,                          MT_SENTINEL_AREA,           FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  10,     0,      0,          2},
+    {0,                         0,      0,                          MT_REMNANT_AREA,            FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,     0,      0,          2},
+    {0,                         0,      0,                          MT_DISMAL_AREA,             FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,     0,      0,          5},
+    {0,                         0,      0,                          MT_BRIDGE_TURRET_AREA,      FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,      0,      0,          2},
+    {0,                         0,      0,                          MT_LAKE_PATH_TURRET_AREA,   FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,      0,      0,          2},
+    {0,                         0,      0,                          MT_TRICK_STATUE_AREA,       FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,     0,      0,          3},
+    {0,                         0,      0,                          MT_SENTINEL_AREA,           FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  10,     0,      0,          2},
     {0,                         0,      0,                          MT_WORM_AREA,               FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  12,     0,      0,          3},
 };
 
