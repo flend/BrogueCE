@@ -304,6 +304,14 @@ static short actionMenu(short x, boolean playingBack) {
         buttons[buttonCount].hotkey[0] = STEALTH_RANGE_KEY;
         takeActionOurselves[buttonCount] = true;
         buttonCount++;
+        if (KEYBOARD_LABELS) {
+            sprintf(buttons[buttonCount].text, "  %s[: %s[%s] Low health warnings  ", yellowColorEscape, whiteColorEscape, rogue.warningPauseMode ? "X" : " ");
+        } else {
+            sprintf(buttons[buttonCount].text, "  [%s] Low health warnings  ", rogue.warningPauseMode ? "X" : " ");
+        }
+        buttons[buttonCount].hotkey[0] = WARNING_PAUSE_KEY;
+        takeActionOurselves[buttonCount] = true;
+        buttonCount++;
 
         if (hasGraphics) {
             if (KEYBOARD_LABELS) {
@@ -2606,6 +2614,16 @@ void executeKeystroke(signed long keystroke, boolean controlKey, boolean shiftKe
                                  &teal, 0);
             }
             break;
+        case WARNING_PAUSE_KEY:
+            rogue.warningPauseMode = !rogue.warningPauseMode;
+            if (rogue.warningPauseMode) {
+                messageWithColor(KEYBOARD_LABELS ? "Low health warning pauses enabled. Press '[' again to disable." : "Pause on warnings activated.",
+                                 &teal, false);
+            } else {
+                messageWithColor(KEYBOARD_LABELS ? "Low health warning pauses disabled. Press '[' again to enable." : "Pause on warnings deactivated.",
+                                 &teal, false);
+            }
+            break;
         case CALL_KEY:
             call(NULL);
             break;
@@ -4075,7 +4093,7 @@ char nextKeyPress(boolean textInput) {
     return theEvent.param1;
 }
 
-#define BROGUE_HELP_LINE_COUNT  33
+#define BROGUE_HELP_LINE_COUNT  34
 
 void printHelpScreen() {
     short i, j;
@@ -4110,6 +4128,7 @@ void printHelpScreen() {
         "",
         "              \\  ****disable/enable color effects",
         "              ]  ****display/hide stealth range",
+        "              [  ****disable/enable low health warning",
         "    <space/esc>  ****clear message or cancel command",
         "",
         "        -- press space or click to continue --"
@@ -4411,7 +4430,12 @@ void printSeed() {
     } else if (rogue.wizard) {
         strcpy(mode,"wizard mode; ");
     }
-    snprintf(buf, COLS, "Dungeon seed #%llu; turn #%lu; %sversion %s", (unsigned long long)rogue.seed, rogue.playerTurnNumber, mode, gameConst->versionString);
+    if (rogue.hideSeed) {
+        snprintf(buf, COLS, "Dungeon seed HIDDEN; turn #%lu; version %s", rogue.playerTurnNumber, gameConst->versionString);
+    }
+    else {
+        snprintf(buf, COLS, "Dungeon seed #%llu; turn #%lu; version %s", (unsigned long long)rogue.seed, rogue.playerTurnNumber, gameConst->versionString);
+    }
     message(buf, 0);
 }
 

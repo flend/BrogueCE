@@ -18,17 +18,18 @@
 
 #define OUTPUT_SIZE 10
 
-#define EVENT_MESSAGE1_START 19
-#define EVENT_MESSAGE2_START 70
+#define EVENT_MESSAGE1_START 24
+#define EVENT_MESSAGE2_START 75
 #define EVENT_MESSAGE1_SIZE 51
 #define EVENT_MESSAGE2_SIZE 30
-#define EVENT_SIZE 100
+#define EVENT_SIZE 105
 #define MAX_INPUT_SIZE 5
 #define MOUSE_INPUT_SIZE 4
 #define OUTPUT_BUFFER_SIZE 1000
 
 //Custom events
 #define REFRESH_SCREEN 50
+#define QUERY_GRAPHICS 51
 
 enum StatusTypes
 {
@@ -46,7 +47,11 @@ static int wfd, rfd;
 static FILE *logfile;
 static unsigned char outputBuffer[OUTPUT_BUFFER_SIZE];
 static int outputBufferPos = 0;
-static int refreshScreenOnly = 0;
+static enum graphicsModes showGraphics = TEXT_GRAPHICS;
+static boolean platformSetup = false;
+
+static void setupPlatform();
+static void closePlatform();
 
 static void gameLoop();
 static void openLogfile();
@@ -57,17 +62,25 @@ static int readFromSocket(unsigned char *buf, int size);
 static void writeToSocket(unsigned char *buf, int size);
 static void flushOutputBuffer();
 
-static void gameLoop() {
-    openLogfile();
-    writeToLog("Logfile started\n");
+static void setupPlatform() {
+    if (platformSetup) {
+        return;
+    }
+     openLogfile();
+     writeToLog("Logfile started\n");
+     setupSockets();
+    platformSetup = true;
+}
 
-    setupSockets();
-
-    int statusCode = rogueMain();
-
+static void closePlatform() {
+    writeToLog("Logfile closed\n");
     closeLogfile();
+}
 
-    exit(statusCode);
+static void gameLoop() {
+    setupPlatform();
+    rogueMain();
+    closePlatform();
 }
 
 static void openLogfile() {
@@ -139,6 +152,7 @@ static void writeToSocket(unsigned char *buf, int size)
 }
 
 // Map characters which are missing or rendered as emoji on some platforms
+/*
 static unsigned int fixUnicode(unsigned int code) {
     switch (code) {
         case U_ARIES: return 0x03C8;
@@ -148,6 +162,7 @@ static unsigned int fixUnicode(unsigned int code) {
         default: return code;
     }
 }
+*/
 
 static void web_plotChar(enum displayGlyph inputChar,
                          short xLoc, short yLoc,
@@ -155,13 +170,13 @@ static void web_plotChar(enum displayGlyph inputChar,
                          short backRed, short backGreen, short backBlue) {
     unsigned char outputBuffer[OUTPUT_SIZE];
     unsigned char firstCharByte, secondCharByte;
-    enum displayGlyph translatedChar;
+    //enum displayGlyph translatedChar;
 
-    translatedChar = glyphToUnicode(inputChar);
-    translatedChar = fixUnicode(inputChar);
+    //translatedChar = glyphToUnicode(inputChar);
+    //translatedChar = fixUnicode(inputChar);
 
-    firstCharByte = translatedChar >> 8 & 0xff;
-    secondCharByte = translatedChar;
+    firstCharByte = inputChar >> 8 & 0xff;
+    secondCharByte = inputChar;
 
     outputBuffer[0] = (unsigned char)xLoc;
     outputBuffer[1] = (unsigned char)yLoc;
@@ -184,7 +199,7 @@ static void sendStatusUpdate() {
 
     statusValues[DEEPEST_LEVEL_STATUS] = rogue.deepestLevel;
     statusValues[GOLD_STATUS] = rogue.gold;
-    statusValues[SEED_STATUS] = rogue.seed;
+    statusValues[SEED_STATUS] = rogue.seededGame;
     statusValues[EASY_MODE_STATUS] = rogue.easyMode;
 
     memset(statusOutputBuffer, 0, OUTPUT_SIZE);
@@ -235,10 +250,7 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     colorsDance = false;
 
     // Send a status update of game variables we want on the client
-    if (!refreshScreenOnly) {
-        sendStatusUpdate();
-    }
-    refreshScreenOnly = 0;
+    sendStatusUpdate();
 
     // Flush output buffer
     flushOutputBuffer();
@@ -251,8 +263,12 @@ static void web_nextKeyOrMouseEvent(rogueEvent *returnEvent, boolean textInput, 
     if (returnEvent->eventType == REFRESH_SCREEN) {
         // Custom event type - not a command for the brogue game
         refreshScreen();
-        // Don't send a status update if this was only a screen refresh (may be sent by observer)
-        refreshScreenOnly = 1;
+        return;
+    }
+
+    if (returnEvent->eventType == QUERY_GRAPHICS) {
+        // Custom event type - not a command for the brogue game
+        notifyEvent(SWITCH_TO_GRAPHICS, (int)showGraphics, 0, "", "");
         return;
     }
 
@@ -288,9 +304,12 @@ static boolean web_modifierHeld(int modifier) {
 static void web_notifyEvent(short eventId, int data1, int data2, const char *str1, const char *str2) {
     unsigned char statusOutputBuffer[EVENT_SIZE];
 
-    // Coordinates of (254, 254) will let the server and client know that this is a event notification update rather than a cell update
+    //web_setGraphicsEnabled is now called before the main game loop, so need to initalize platform if not previously initialized
+    setupPlatform();
+
+    // Coordinates of (254, 253) identifies an event update v1 (254 - V) 
     statusOutputBuffer[0] = 254;
-    statusOutputBuffer[1] = 254;
+    statusOutputBuffer[1] = 253;
 
     statusOutputBuffer[2] = eventId;
 
@@ -306,10 +325,15 @@ static void web_notifyEvent(short eventId, int data1, int data2, const char *str
     statusOutputBuffer[12] = rogue.gold >> 16 & 0xff;
     statusOutputBuffer[13] = rogue.gold >> 8 & 0xff;
     statusOutputBuffer[14] = rogue.gold;
-    statusOutputBuffer[15] = rogue.seed >> 24 & 0xff;
-    statusOutputBuffer[16] = rogue.seed >> 16 & 0xff;
-    statusOutputBuffer[17] = rogue.seed >> 8 & 0xff;
-    statusOutputBuffer[18] = rogue.seed;
+    statusOutputBuffer[15] = rogue.seed >> 56 & 0xff;
+    statusOutputBuffer[16] = rogue.seed >> 48 & 0xff;
+    statusOutputBuffer[17] = rogue.seed >> 40 & 0xff;
+    statusOutputBuffer[18] = rogue.seed >> 32 & 0xff;
+    statusOutputBuffer[19] = rogue.seed >> 24 & 0xff;
+    statusOutputBuffer[20] = rogue.seed >> 16 & 0xff;
+    statusOutputBuffer[21] = rogue.seed >> 8 & 0xff;
+    statusOutputBuffer[22] = rogue.seed;
+    statusOutputBuffer[23] = rogue.seededGame;
 
     // str1 is the death / victory message
     memcpy(statusOutputBuffer + EVENT_MESSAGE1_START, str1, EVENT_MESSAGE1_SIZE);
@@ -322,6 +346,12 @@ static void web_notifyEvent(short eventId, int data1, int data2, const char *str
     flushOutputBuffer();
 }
 
+static enum graphicsModes web_setGraphicsEnabled(enum graphicsModes mode) {
+    showGraphics = mode;
+    notifyEvent(SWITCH_TO_GRAPHICS, showGraphics, 0, "", "");
+    return mode;
+}
+
 struct brogueConsole webConsole = {
     gameLoop,
     web_pauseForMilliseconds,
@@ -331,5 +361,5 @@ struct brogueConsole webConsole = {
     web_modifierHeld,
     web_notifyEvent,
     NULL,
-    NULL
+    web_setGraphicsEnabled
 };
