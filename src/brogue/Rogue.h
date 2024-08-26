@@ -60,10 +60,10 @@
 #define D_OMNISCENCE                    (rogue.wizard && 0)
 
 #define D_INSPECT_LEVELGEN              (rogue.wizard && 0)
-#define D_INSPECT_MACHINES              (rogue.wizard && 0)
+#define D_INSPECT_MACHINES              (rogue.wizard && 1)
 
-#define D_MESSAGE_ITEM_GENERATION       (rogue.wizard && 0)
-#define D_MESSAGE_MACHINE_GENERATION    (rogue.wizard && 0)
+#define D_MESSAGE_ITEM_GENERATION       (rogue.wizard && 1)
+#define D_MESSAGE_MACHINE_GENERATION    (rogue.wizard && 1)
 
 // If enabled, runs a benchmark for the performance of repeatedly updating the screen at the start of the game.
 // #define SCREEN_UPDATE_BENCHMARK

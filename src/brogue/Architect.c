@@ -1099,6 +1099,8 @@ static boolean buildAMachineOrChildMachine(enum machineTypes bp,
             for (int i=1; i<gameConst->numberBlueprints; i++) {
                 if (blueprintQualifies(i, requiredMachineFlags)) {
                     totalFreq += blueprintCatalog[i].frequency;
+                    //if (D_MESSAGE_MACHINE_GENERATION)
+                      //printf("\nQualified blueprint %i:%s (freq: %i) (flags %i).", i, blueprintCatalog[i].name, blueprintCatalog[i].frequency, requiredMachineFlags);
                 }
             }
 
@@ -1129,6 +1131,17 @@ static boolean buildAMachineOrChildMachine(enum machineTypes bp,
             brogueAssert(bp>0);
         }
 
+        if (D_MESSAGE_MACHINE_GENERATION) {
+            if (requiredMachineFlags & BP_ADOPT_ITEM) {
+                printf("\nDepth %i: Start building an (adopt item) machine from blueprint %i:%s.", rogue.depthLevel, bp, blueprintCatalog[bp].name);
+            }
+            else if (requiredMachineFlags & BP_VESTIBULE) {
+                printf("\nDepth %i: Start building an (vestibule) machine from blueprint %i:%s.", rogue.depthLevel, bp, blueprintCatalog[bp].name);
+            }
+            else {
+                printf("\nDepth %i: Start building a machine from blueprint %i:%s.", rogue.depthLevel, bp, blueprintCatalog[bp].name);
+            }
+        }
         // Find a location and map out the machine interior.
         if (blueprintCatalog[bp].flags & BP_ROOM) {
             // If it's a room machine, count up the gates of appropriate
