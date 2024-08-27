@@ -1,3 +1,10 @@
+Bullet Brogue v1.1
+==================
+
+- Updated to CE v1.14 sources
+- Tweaked level generation to produce fewer pit traps and add more diversity to vaults
+- Replaced the guaranteed level 1 weapon with a vault containing either a runic or heavy weapon
+
 1.14
 ====
 
