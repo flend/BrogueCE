@@ -3309,6 +3309,7 @@ extern "C" {
     short chooseKind(const itemTable *theTable, short numKinds);
     item *makeItemInto(item *theItem, unsigned long itemCategory, short itemKind);
     boolean itemIsHeavyWeapon(const item *theItem);
+    boolean itemIsPositivelyEnchanted(const item *theItem);
     void updateEncumbrance(void);
     short displayedArmorValue(void);
     short armorValueIfUnenchanted(item *theItem);
