@@ -166,7 +166,7 @@ const autoGenerator autoGeneratorCatalog_BulletBrogue[] = {
     {0,                         0,      0,                          MT_BRIDGE_TURRET_AREA,      FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,      0,      0,          2},
     {0,                         0,      0,                          MT_LAKE_PATH_TURRET_AREA,   FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,      0,      0,          2},
     {0,                         0,      0,                          MT_TRICK_STATUE_AREA,       FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,     0,      0,          3},
-    {0,                         0,      0,                          MT_SENTINEL_AREA,           FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  10,     0,      0,          2},
+    {0,                         0,      0,                          MT_SENTINEL_AREA,           FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  10,     0,      0,          2},
     {0,                         0,      0,                          MT_WORM_AREA,               FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  12,     0,      0,          3},
 };
 
