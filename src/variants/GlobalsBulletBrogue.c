@@ -166,7 +166,7 @@ const autoGenerator autoGeneratorCatalog_BulletBrogue[] = {
     {0,                         0,      0,                          MT_BRIDGE_TURRET_AREA,      FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,      0,      0,          2},
     {0,                         0,      0,                          MT_LAKE_PATH_TURRET_AREA,   FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,      0,      0,          2},
     {0,                         0,      0,                          MT_TRICK_STATUE_AREA,       FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  15,     0,      0,          3},
-    {0,                         0,      0,                          MT_SENTINEL_AREA,           FLOOR,      NOTHING,    1,      DEEPEST_LEVEL,  10,     0,      0,          2},
+    {0,                         0,      0,                          MT_SENTINEL_AREA,           FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  10,     0,      0,          2},
     {0,                         0,      0,                          MT_WORM_AREA,               FLOOR,      NOTHING,    2,      DEEPEST_LEVEL,  12,     0,      0,          3},
 };
 
@@ -994,7 +994,7 @@ const char *mainMenuTitle_BulletBrogue =
                          ####                                       ";
 
 #define BULLET_BROGUE_MAJOR 1
-#define BULLET_BROGUE_MINOR 1
+#define BULLET_BROGUE_MINOR 2
 #define BULLET_BROGUE_PATCH 0
 
 // Brogue version: what the user sees in the menu and title
@@ -1017,7 +1017,7 @@ strings, but they are equal (rogue.patchLevel is set to 0).
 
 // Dungeon version - the earliest version where each seed creates a dungeon identical
 // to that in the current version. Used in seed catalog output.
-#define BULLET_BROGUE_DUNGEON_VERSION_STRING "BB 1.1"
+#define BULLET_BROGUE_DUNGEON_VERSION_STRING "BB 1.2"
 
 // Version shown in ./brogue --version
 const char *bulletBrogueVersion = BULLET_BROGUE_VERSION_STRING;
