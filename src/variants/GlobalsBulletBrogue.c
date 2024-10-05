@@ -994,7 +994,7 @@ const char *mainMenuTitle_BulletBrogue =
                          ####                                       ";
 
 #define BULLET_BROGUE_MAJOR 1
-#define BULLET_BROGUE_MINOR 2
+#define BULLET_BROGUE_MINOR 1
 #define BULLET_BROGUE_PATCH 0
 
 // Brogue version: what the user sees in the menu and title
@@ -1017,7 +1017,7 @@ strings, but they are equal (rogue.patchLevel is set to 0).
 
 // Dungeon version - the earliest version where each seed creates a dungeon identical
 // to that in the current version. Used in seed catalog output.
-#define BULLET_BROGUE_DUNGEON_VERSION_STRING "BB 1.2"
+#define BULLET_BROGUE_DUNGEON_VERSION_STRING "BB 1.1"
 
 // Version shown in ./brogue --version
 const char *bulletBrogueVersion = BULLET_BROGUE_VERSION_STRING;
