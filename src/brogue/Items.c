@@ -164,11 +164,15 @@ static boolean itemIsThrowingWeapon(const item *theItem) {
 }
 
 boolean itemIsHeavyWeapon(const item *theItem) {
-    if (theItem && theItem->category == WEAPON
-        && weaponTable[theItem->kind].strengthRequired >= 15) {
+    if (theItem && theItem->category == WEAPON && !itemIsThrowingWeapon(theItem)
+        && weaponTable[theItem->kind].strengthRequired > 15) {
         return true;
     }
     return false;
+}
+
+boolean itemIsPositivelyEnchanted(const item *theItem) {
+    return theItem->enchant1 > 0;
 }
 
 // Sets an item to the given type and category (or chooses randomly if -1) with all other stats
