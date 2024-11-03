@@ -1810,6 +1810,15 @@ static void addMachines() {
 
     analyzeMap(true);
 
+    // For bullet brogue, add a guaranteed weapon vault on l1
+    if (gameVariant == VARIANT_BULLET_BROGUE && rogue.depthLevel == 1) {
+        for (failsafe = 50; failsafe; failsafe--) {
+            if (buildAMachine(MT_REWARD_HEAVY_OR_RUNIC_WEAPON, -1, -1, 0)) {
+                break;
+            }
+        }
+    }
+
     // Add the amulet holder if it's depth 26:
     if (rogue.depthLevel == gameConst->amuletLevel) {
         for (failsafe = 50; failsafe; failsafe--) {

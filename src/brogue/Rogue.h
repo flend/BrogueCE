@@ -2605,6 +2605,7 @@ enum machineFeatureFlags {
     MF_REQUIRE_GOOD_RUNIC           = Fl(18),   // generated item must be uncursed runic
     MF_MONSTERS_DORMANT             = Fl(19),   // monsters are dormant, and appear when a dungeon feature with DFF_ACTIVATE_DORMANT_MONSTER spawns on their tile
     MF_REQUIRE_HEAVY_WEAPON         = Fl(20),   // requires a heavy weapon
+    MF_REQUIRE_HEAVY_WEAPON         = Fl(20),   // requires a heavy weapon
     MF_BUILD_IN_WALLS               = Fl(21),   // build in an impassable tile that is adjacent to the interior
     MF_BUILD_ANYWHERE_ON_LEVEL      = Fl(22),   // build anywhere on the level that is not inside the machine
     MF_REPEAT_UNTIL_NO_PROGRESS     = Fl(23),   // keep trying to build this feature set until no changes are made
@@ -2674,6 +2675,7 @@ enum machineTypes {
     MT_REWARD_CONSUMABLES,
     MT_REWARD_PEDESTALS_PERMANENT,
     MT_REWARD_PEDESTALS_CONSUMABLE,
+    MT_REWARD_HEAVY_OR_RUNIC_WEAPON,
     MT_REWARD_HEAVY_OR_RUNIC_WEAPON,
     MT_REWARD_COMMUTATION_ALTARS,
     MT_REWARD_RESURRECTION_ALTAR,
