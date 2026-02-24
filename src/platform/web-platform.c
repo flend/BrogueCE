@@ -199,7 +199,7 @@ static void sendStatusUpdate() {
 
     statusValues[DEEPEST_LEVEL_STATUS] = rogue.deepestLevel;
     statusValues[GOLD_STATUS] = rogue.gold;
-    statusValues[SEED_STATUS] = rogue.seed;
+    statusValues[SEED_STATUS] = rogue.seededGame;
     statusValues[MODE_STATUS] = rogue.mode;
 
     memset(statusOutputBuffer, 0, OUTPUT_SIZE);
