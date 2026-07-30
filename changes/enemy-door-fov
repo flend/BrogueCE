@@ -1,0 +1,1 @@
+Fixed a bug where the player's field of view was not updated when an enemy opened a door (or trampled vision-blocking foliage), so tiles beyond stayed unseen until a later vision refresh.

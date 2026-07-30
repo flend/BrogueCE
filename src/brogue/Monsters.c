@@ -3675,6 +3675,7 @@ boolean knownToPlayerAsPassableOrSecretDoor(pos loc) {
 
 void setMonsterLocation(creature *monst, pos newLoc) {
     unsigned long creatureFlag = (monst == &player ? HAS_PLAYER : HAS_MONSTER);
+    boolean usedToBlockVision;
     pmapAt(monst->loc)->flags &= ~creatureFlag;
     refreshDungeonCell(monst->loc);
     monst->turnsSpentStationary = 0;
@@ -3690,6 +3691,9 @@ void setMonsterLocation(creature *monst, pos newLoc) {
         discover(newLoc.x, newLoc.y); // if you see a monster use a secret door, you discover it
     }
     refreshDungeonCell(newLoc);
+    // Opening a door or trampling foliage can clear T_OBSTRUCTS_VISION; remember opacity
+    // so we can refresh the player's FOV when a non-player creature changes it.
+    usedToBlockVision = cellHasTerrainFlag(newLoc, T_OBSTRUCTS_VISION);
     applyInstantTileEffectsToCreature(monst);
     if (monst == &player) {
         updateVision(true);
@@ -3697,6 +3701,10 @@ void setMonsterLocation(creature *monst, pos newLoc) {
         if (pmapAt(player.loc)->flags & HAS_ITEM) {
             pickUpItemAt(player.loc);
         }
+    } else if (usedToBlockVision != cellHasTerrainFlag(newLoc, T_OBSTRUCTS_VISION)) {
+        // e.g. an enemy opened a door: update FOV so the player can see through it
+        updateVision(true);
+        rogue.stealthRange = currentStealthRange();
     }
 }
 
